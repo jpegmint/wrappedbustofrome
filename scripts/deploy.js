@@ -29,9 +29,18 @@ async function main() {
     await wRome.deployed();
     console.log("wROME deployed to:", wRome.address);
 
+    wRome.on("Wrapped", (from, tokenId) => {
+        console.log(from, tokenId);
+    });
+
+    wRome.on("Unwrapped", (from, tokenId) => {
+        console.log(from, (tokenId).toString());
+    });
+
     await nifty.setApprovalForAll(wRome.address, 1);
     await wRome.wrap(100010001);
     await wRome.tokenURI(100010001);
+    await wRome.unwrap(100010001);
   }
   
 main()

@@ -13,8 +13,7 @@ contract WrappedBustOfRomeOneYear is ERC721, ERC721Enumerable, Pausable, Ownable
     INiftyBuilderInstance private _niftyBuilderInstance;
     IDateTimeAPI private _dateTimeInstance;
 
-    string[13] previews = [
-        "",                                             // State 0
+    string[12] previews = [
         "iOKh8ppTX5831s9ip169PfcqZ265rlz_kH-oyDXELtA",  // State 1
         "4iJ3Igr90bfEkBMeQv1t2S4ctK2X-I18hnbal2YFfWI",  // State 2
         "y4yuf5VvfAYOl3Rm5DTsAaneJDXwFJGBThI6VG3b7co",  // State 3
@@ -29,29 +28,32 @@ contract WrappedBustOfRomeOneYear is ERC721, ERC721Enumerable, Pausable, Ownable
         "b132CTM45LOEMwzOqxnPqtDqlPPwcaQ0ztQ5OWhBnvQ"   // State 12
     ];
 
+    event Wrapped(address indexed from, uint256 tokenId);
+    event Unwrapped(address indexed from, uint256 tokenId);
+
     constructor(address niftyBuilderAddress, address dateTimeAddress) ERC721("Wrapped Bust of Rome (One Year) by Daniel Arsham", "wROME") {
         _niftyBuilderInstance = INiftyBuilderInstance(niftyBuilderAddress);
         _dateTimeInstance = IDateTimeAPI(dateTimeAddress);
     }
 
 	function wrap(uint256 tokenId) public whenNotPaused {
-
 		_safeMint(msg.sender, tokenId);
 		_niftyBuilderInstance.safeTransferFrom(msg.sender, address(this), tokenId);
+        emit Wrapped(msg.sender, tokenId);
 	}
 
 	function unwrap(uint256 tokenId) public whenNotPaused {
-
-		require(ownerOf(tokenId) == msg.sender, "WBR1: transfer of token that is not own");
+		require(ownerOf(tokenId) == msg.sender, "wROME: transfer of token that is not own");
 		_burn(tokenId);
 		_niftyBuilderInstance.safeTransferFrom(address(this), msg.sender, tokenId);
+        emit Unwrapped(msg.sender, tokenId);
 	}
 
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
 
-        require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
+        require(_exists(tokenId), "wROME: URI query for nonexistent token");
 
-        string memory imageHash = previews[_dateTimeInstance.getMonth(block.timestamp)];
+        string memory imageHash = previews[_dateTimeInstance.getMonth(block.timestamp) - 1];
         string memory animationHash = _niftyBuilderInstance.tokenIPFSHash(tokenId);
 
         return string(abi.encodePacked(
@@ -70,10 +72,13 @@ contract WrappedBustOfRomeOneYear is ERC721, ERC721Enumerable, Pausable, Ownable
     }
 
 	function onERC721Received(address, address, uint256, bytes calldata) external view returns (bytes4) {
-
-		require(msg.sender == address(_niftyBuilderInstance), "WBR1: unrecognized contract");
+		require(msg.sender == address(_niftyBuilderInstance), "wROME: unrecognized contract");
 		return this.onERC721Received.selector;
 	}
+
+    function withdrawAll() public payable onlyOwner {
+        require(payable(_msgSender()).send(address(this).balance));
+    }
 
     function pause() public onlyOwner {
         _pause();
