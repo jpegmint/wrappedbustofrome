@@ -36,7 +36,6 @@ contract WrappedBustOfRomeOneYear is ERC721, ERC721Holder, ERC721Enumerable, Pau
     event Unwrapped(address indexed from, uint256 tokenId);
 
     constructor(address niftyBuilderAddress, address dateTimeAddress) ERC721("Wrapped Bust of Rome (One Year) by Daniel Arsham", "wROME") {
-        
         _arweaveGatewayUri = 'https://arweave.net/';
         _ipfsGatewayUri = 'ipfs://';
         _niftyBuilderInstance = NiftyBuilderAPI(niftyBuilderAddress);
@@ -59,26 +58,23 @@ contract WrappedBustOfRomeOneYear is ERC721, ERC721Holder, ERC721Enumerable, Pau
     }
 
     /**
-     * TokenURI override to return IPFS/Arweave assets dynamically.
+     * TokenURI override to return IPFS/Arweave assets on-chain and dynamically.
      */
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
 
         require(_exists(tokenId), "wROME: URI query for nonexistent token");
 
-        string memory imageHash = previews[_dateTimeInstance.getMonth(block.timestamp) - 1];
-        string memory animationHash = _niftyBuilderInstance.tokenIPFSHash(tokenId);
+        uint8 month =_dateTimeInstance.getMonth(block.timestamp) - 1;
+        string memory imageUri = string(abi.encodePacked(_arweaveGatewayUri, previews[month]));
+        string memory animationUri = string(abi.encodePacked(_ipfsGatewayUri, _niftyBuilderInstance.tokenIPFSHash(tokenId)));
 
         return string(abi.encodePacked(
             'data:application/json;utf8,{',
                 '"name": "Eroding and Reforming Bust of Rome (One Year)",',
                 '"description": "With his debut NFT release, Daniel Arsham introduces a concept never before seen on Nifty Gateway. His *Eroding and Reforming Bust of Rome (One Year)* piece will erode, reform, and change based on the time of year.",',
-                '"created_by": "Daniel Arsham",',
                 '"external_url": "https://niftygateway.com/collections/danielarsham",',
-                '"background_color": "ffffff",',
-                '"image": "', _arweaveGatewayUri, imageHash, '",',
-                '"image_url": "', _arweaveGatewayUri, imageHash, '",',
-                '"animation": "', _ipfsGatewayUri, animationHash, '",',
-                '"animation_url": "', _ipfsGatewayUri, animationHash, '"',
+                '"image": "', imageUri, '",',
+                '"animation_url": "', animationUri, '"',
             '}'
         ));
     }
@@ -102,11 +98,11 @@ contract WrappedBustOfRomeOneYear is ERC721, ERC721Holder, ERC721Enumerable, Pau
 	}
 
     /**
-     * Recovery function to extract orphaned ROME tokens. Works only if wROME contract owns ROME token
-     * that wasn't wrapped successfully.
+     * Recovery function to extract orphaned ROME tokens. Works only if wROME contract
+     * owns unwrapped ROME.
      */
     function recoverOprhanedToken(uint256 tokenId) public onlyOwner {
-        require(!_exists(tokenId), "wRome: can't recover a wrapped token");
+        require(!_exists(tokenId), "wRome: can't recover wrapped token");
         require(_niftyBuilderInstance.ownerOf(tokenId) == address(this), "wRome: can't recover token that is not own");
         _niftyBuilderInstance.safeTransferFrom(address(this), msg.sender, tokenId);
     }
