@@ -1,11 +1,21 @@
 // scripts/deploy.js
 // Localhost
 // wallet   0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
-// datetime 0x5FbDB2315678afecb367f032d93F642f64180aa3
-// nifty    0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
-// wRome    0x0165878A594ca255338adfa4d48449f69242Eb8F
 
 async function main() {
+
+    const NiftyBuilderMaster = await ethers.getContractFactory("NiftyBuilderMaster");
+    console.log("Deploying NiftyBuilderMaster...");
+    const masterBuilder = await NiftyBuilderMaster.deploy();
+    await masterBuilder.deployed();
+    console.log("NiftyBuilderMaster deployed to:", masterBuilder.address);
+
+    const NiftyRegistry = await ethers.getContractFactory("NiftyRegistry");
+    console.log("Deploying NiftyRegistry...");
+    const niftyRegistry = await NiftyRegistry.deploy(['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'], []);
+    await niftyRegistry.deployed();
+    console.log("NiftyRegistry deployed to:", niftyRegistry.address);
+    await niftyRegistry.addNiftyKey('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266');
 
     const DateTime = await ethers.getContractFactory("DateTime");
     console.log("Deploying DateTime...");
@@ -15,7 +25,7 @@ async function main() {
 
     const Nifty = await ethers.getContractFactory('NiftyBuilderInstance');
     console.log("Deploying Nifty...");
-    const nifty = await Nifty.deploy(datetime.address, '0xca9fc51835dbb525bb6e6ebfcc67b8be1b08bdfa', '0x33f8cb717384a96c2a5de7964d0c7c1a10777660')
+    const nifty = await Nifty.deploy(datetime.address, masterBuilder.address, niftyRegistry.address)
     await nifty.deployed();
     console.log("Nifty deployed to:", nifty.address);
 
@@ -30,15 +40,18 @@ async function main() {
     console.log("wROME deployed to:", wRome.address);
 
     wRome.on("Wrapped", (from, tokenId) => {
-        console.log(from, tokenId);
+        console.log('Wrapped', from, (tokenId).toString());
     });
 
     wRome.on("Unwrapped", (from, tokenId) => {
-        console.log(from, (tokenId).toString());
+        console.log('Unwrapped', from, (tokenId).toString());
     });
 
     await nifty.setApprovalForAll(wRome.address, 1);
     await wRome.wrap(100010001);
+    await wRome.tokenURI(100010001);
+    await wRome.setArweaveGatewayUri('ar://');
+    await wRome.setIpfsGatewayUri('ipfs://');
     await wRome.tokenURI(100010001);
     await wRome.unwrap(100010001);
   }

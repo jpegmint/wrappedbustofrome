@@ -1,7 +1,3 @@
-/**
- *Submitted for verification at Etherscan.io on 2021-06-03
-*/
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
@@ -132,7 +128,9 @@ contract DateTime {
         }
 
         function getMonth(uint timestamp) public pure returns (uint8) {
-                return parseTimestamp(timestamp).month;
+            uint8[12] memory offset = [11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+            uint8 index = parseTimestamp(timestamp).month - 1;
+            return offset[index];
         }
 
         function getDay(uint timestamp) public pure returns (uint8) {

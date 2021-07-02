@@ -1,17 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "./api/DateTimeAPI.sol";
+import "./api/NiftyBuilderAPI.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./INiftyBuilderInstance.sol";
-import "./IDateTimeAPI.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
-contract WrappedBustOfRomeOneYear is ERC721, ERC721Enumerable, Pausable, Ownable {
+contract WrappedBustOfRomeOneYear is ERC721, ERC721Holder, ERC721Enumerable, Pausable, Ownable {
 
-    INiftyBuilderInstance private _niftyBuilderInstance;
-    IDateTimeAPI private _dateTimeInstance;
+    NiftyBuilderAPI private _niftyBuilderInstance;
+    DateTimeAPI private _dateTimeInstance;
+
+    string private _arweaveGatewayUri;
+    string private _ipfsGatewayUri;
 
     string[12] previews = [
         "iOKh8ppTX5831s9ip169PfcqZ265rlz_kH-oyDXELtA",  // State 1
@@ -32,23 +36,31 @@ contract WrappedBustOfRomeOneYear is ERC721, ERC721Enumerable, Pausable, Ownable
     event Unwrapped(address indexed from, uint256 tokenId);
 
     constructor(address niftyBuilderAddress, address dateTimeAddress) ERC721("Wrapped Bust of Rome (One Year) by Daniel Arsham", "wROME") {
-        _niftyBuilderInstance = INiftyBuilderInstance(niftyBuilderAddress);
-        _dateTimeInstance = IDateTimeAPI(dateTimeAddress);
+        
+        _arweaveGatewayUri = 'https://arweave.net/';
+        _ipfsGatewayUri = 'ipfs://';
+        _niftyBuilderInstance = NiftyBuilderAPI(niftyBuilderAddress);
+        _dateTimeInstance = DateTimeAPI(dateTimeAddress);
     }
 
-	function wrap(uint256 tokenId) public whenNotPaused {
-		_safeMint(msg.sender, tokenId);
-		_niftyBuilderInstance.safeTransferFrom(msg.sender, address(this), tokenId);
-        emit Wrapped(msg.sender, tokenId);
-	}
+    /** Configurable IPFS Gateway URI to serve animation files. */
+    function setIpfsGatewayUri(string memory gatewayUri) external onlyOwner {
+        _ipfsGatewayUri = gatewayUri;
+    }
 
-	function unwrap(uint256 tokenId) public whenNotPaused {
-		require(ownerOf(tokenId) == msg.sender, "wROME: transfer of token that is not own");
-		_burn(tokenId);
-		_niftyBuilderInstance.safeTransferFrom(address(this), msg.sender, tokenId);
-        emit Unwrapped(msg.sender, tokenId);
-	}
+    /** Configurable Arewave gateway to serve image preview files. */
+    function setArweaveGatewayUri(string memory gatewayUri) external onlyOwner {
+        _arweaveGatewayUri = gatewayUri;
+    }
 
+    /** Configurable contract address for DateTime. */ 
+    function setDateTimeContract(address dateTimeAddress) public onlyOwner {
+        _dateTimeInstance = DateTimeAPI(dateTimeAddress);
+    }
+
+    /**
+     * TokenURI override to return IPFS/Arweave assets dynamically.
+     */
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
 
         require(_exists(tokenId), "wROME: URI query for nonexistent token");
@@ -63,21 +75,40 @@ contract WrappedBustOfRomeOneYear is ERC721, ERC721Enumerable, Pausable, Ownable
                 '"created_by": "Daniel Arsham",',
                 '"external_url": "https://niftygateway.com/collections/danielarsham",',
                 '"background_color": "ffffff",',
-                '"image": "https://arweave.net/', imageHash, '",',
-                '"image_url": "https://arweave.net/', imageHash, '",',
-                '"animation": "ipfs://', animationHash, '",',
-                '"animation_url": "ipfs://', animationHash, '"',
+                '"image": "', _arweaveGatewayUri, imageHash, '",',
+                '"image_url": "', _arweaveGatewayUri, imageHash, '",',
+                '"animation": "', _ipfsGatewayUri, animationHash, '",',
+                '"animation_url": "', _ipfsGatewayUri, animationHash, '"',
             '}'
         ));
     }
 
-	function onERC721Received(address, address, uint256, bytes calldata) external view returns (bytes4) {
+	function wrap(uint256 tokenId) public whenNotPaused {
+		_niftyBuilderInstance.safeTransferFrom(msg.sender, address(this), tokenId);
+	}
+
+	function unwrap(uint256 tokenId) public whenNotPaused {
+		require(ownerOf(tokenId) == msg.sender, "wROME: transfer of token that is not own");
+		_burn(tokenId);
+		_niftyBuilderInstance.safeTransferFrom(address(this), msg.sender, tokenId);
+        emit Unwrapped(msg.sender, tokenId);
+	}
+
+	function onERC721Received(address, address from, uint256 tokenId, bytes calldata) public whenNotPaused override returns (bytes4) {
 		require(msg.sender == address(_niftyBuilderInstance), "wROME: unrecognized contract");
+		_safeMint(from, tokenId);
+        emit Wrapped(from, tokenId);
 		return this.onERC721Received.selector;
 	}
 
-    function withdrawAll() public payable onlyOwner {
-        require(payable(_msgSender()).send(address(this).balance));
+    /**
+     * Recovery function to extract orphaned ROME tokens. Works only if wROME contract owns ROME token
+     * that wasn't wrapped successfully.
+     */
+    function recoverOprhanedToken(uint256 tokenId) public onlyOwner {
+        require(!_exists(tokenId), "wRome: can't recover a wrapped token");
+        require(_niftyBuilderInstance.ownerOf(tokenId) == address(this), "wRome: can't recover token that is not own");
+        _niftyBuilderInstance.safeTransferFrom(address(this), msg.sender, tokenId);
     }
 
     function pause() public onlyOwner {
