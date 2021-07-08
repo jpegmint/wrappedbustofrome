@@ -3,19 +3,21 @@ pragma solidity ^0.8.0;
 
 import "./api/DateTimeAPI.sol";
 import "./api/NiftyBuilderAPI.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
-contract WrappedBustOfRomeOneYear is ERC721, ERC721Holder, ERC721Enumerable, Pausable, Ownable {
+contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, AccessControl, ReentrancyGuard {
 
-    NiftyBuilderAPI private _niftyBuilderInstance;
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+
+    string private _arweaveGatewayUri = 'https://arweave.net/';
+    string private _ipfsGatewayUri = 'ipfs://';
     DateTimeAPI private _dateTimeInstance;
-
-    string private _arweaveGatewayUri;
-    string private _ipfsGatewayUri;
+    NiftyBuilderAPI private immutable _niftyBuilderInstance;
 
     string[12] previews = [
         "iOKh8ppTX5831s9ip169PfcqZ265rlz_kH-oyDXELtA",  // State 1
@@ -32,30 +34,33 @@ contract WrappedBustOfRomeOneYear is ERC721, ERC721Holder, ERC721Enumerable, Pau
         "b132CTM45LOEMwzOqxnPqtDqlPPwcaQ0ztQ5OWhBnvQ"   // State 12
     ];
 
-    event Wrapped(address indexed from, uint256 tokenId);
-    event Unwrapped(address indexed from, uint256 tokenId);
+    event TokenWrapped(address indexed from, uint256 tokenId);
+    event TokenUnwrapped(address indexed from, uint256 tokenId);
 
     constructor(address niftyBuilderAddress, address dateTimeAddress) ERC721("Wrapped Bust of Rome (One Year) by Daniel Arsham", "wROME") {
-        _arweaveGatewayUri = 'https://arweave.net/';
-        _ipfsGatewayUri = 'ipfs://';
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(MINTER_ROLE, msg.sender);
+        setDateTimeContract(dateTimeAddress);
         _niftyBuilderInstance = NiftyBuilderAPI(niftyBuilderAddress);
-        _dateTimeInstance = DateTimeAPI(dateTimeAddress);
     }
 
-    /** Configurable IPFS Gateway URI to serve animation files. */
-    function setIpfsGatewayUri(string memory gatewayUri) external onlyOwner {
-        _ipfsGatewayUri = gatewayUri;
-    }
+	function wrap(uint256 tokenId) public onlyRole(MINTER_ROLE) nonReentrant {
+		_niftyBuilderInstance.safeTransferFrom(msg.sender, address(this), tokenId);
+	}
 
-    /** Configurable Arewave gateway to serve image preview files. */
-    function setArweaveGatewayUri(string memory gatewayUri) external onlyOwner {
-        _arweaveGatewayUri = gatewayUri;
-    }
+	function unwrap(uint256 tokenId) public nonReentrant {
+		require(msg.sender == ownerOf(tokenId), "wROME: transfer of token that is not own");
+		_burn(tokenId);
+		_niftyBuilderInstance.safeTransferFrom(address(this), msg.sender, tokenId);
+        emit TokenUnwrapped(msg.sender, tokenId);
+	}
 
-    /** Configurable contract address for DateTime. */ 
-    function setDateTimeContract(address dateTimeAddress) public onlyOwner {
-        _dateTimeInstance = DateTimeAPI(dateTimeAddress);
-    }
+	function onERC721Received(address, address from, uint256 tokenId, bytes calldata) public override nonReentrant returns (bytes4) {
+		require(msg.sender == address(_niftyBuilderInstance), "wROME: unrecognized contract");
+		_safeMint(from, tokenId);
+        emit TokenWrapped(from, tokenId);
+		return this.onERC721Received.selector;
+	}
 
     /**
      * TokenURI override to return IPFS/Arweave assets on-chain and dynamically.
@@ -79,47 +84,36 @@ contract WrappedBustOfRomeOneYear is ERC721, ERC721Holder, ERC721Enumerable, Pau
         ));
     }
 
-	function wrap(uint256 tokenId) public whenNotPaused {
-		_niftyBuilderInstance.safeTransferFrom(msg.sender, address(this), tokenId);
-	}
+    /** Configurable IPFS Gateway URI to serve animation files. */
+    function setIpfsGatewayUri(string memory gatewayUri) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _ipfsGatewayUri = gatewayUri;
+    }
 
-	function unwrap(uint256 tokenId) public whenNotPaused {
-		require(ownerOf(tokenId) == msg.sender, "wROME: transfer of token that is not own");
-		_burn(tokenId);
-		_niftyBuilderInstance.safeTransferFrom(address(this), msg.sender, tokenId);
-        emit Unwrapped(msg.sender, tokenId);
-	}
+    /** Configurable Arewave gateway to serve image preview files. */
+    function setArweaveGatewayUri(string memory gatewayUri) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _arweaveGatewayUri = gatewayUri;
+    }
 
-	function onERC721Received(address, address from, uint256 tokenId, bytes calldata) public whenNotPaused override returns (bytes4) {
-		require(msg.sender == address(_niftyBuilderInstance), "wROME: unrecognized contract");
-		_safeMint(from, tokenId);
-        emit Wrapped(from, tokenId);
-		return this.onERC721Received.selector;
-	}
+    /** Configurable contract address for DateTime. */ 
+    function setDateTimeContract(address contractAddress) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _dateTimeInstance = DateTimeAPI(contractAddress);
+    }
 
     /**
      * Recovery function to extract orphaned ROME tokens. Works only if wROME contract
-     * owns unwrapped ROME.
+     * owns unwrapped ROME token.
      */
-    function recoverOprhanedToken(uint256 tokenId) public onlyOwner {
-        require(!_exists(tokenId), "wRome: can't recover wrapped token");
-        require(_niftyBuilderInstance.ownerOf(tokenId) == address(this), "wRome: can't recover token that is not own");
+    function recoverOrphanedToken(uint256 tokenId) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(!_exists(tokenId), "wROME: can't recover wrapped token");
+        require(_niftyBuilderInstance.ownerOf(tokenId) == address(this), "wROME: can't recover token that is not own");
         _niftyBuilderInstance.safeTransferFrom(address(this), msg.sender, tokenId);
     }
 
-    function pause() public onlyOwner {
-        _pause();
-    }
-
-    function unpause() public onlyOwner {
-        _unpause();
-    }
-
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal whenNotPaused override(ERC721, ERC721Enumerable) {
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal override(ERC721, ERC721Enumerable) {
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721Enumerable) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721Enumerable, AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 }

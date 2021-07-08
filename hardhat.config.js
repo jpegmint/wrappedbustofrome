@@ -1,5 +1,6 @@
 require('@nomiclabs/hardhat-ethers');
 require("@nomiclabs/hardhat-etherscan");
+require("@nomiclabs/hardhat-waffle");
 
 const { etherscanApiKey, alchemyApiKey, mnemonic } = require('./secrets.json');
 
