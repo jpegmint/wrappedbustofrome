@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import './../api/IDateTime.sol';
 
-contract DateTime is IDateTime {
+contract MockDateTime is IDateTime {
     
     uint8 private _month;
 
