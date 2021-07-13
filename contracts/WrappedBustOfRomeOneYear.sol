@@ -85,7 +85,7 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
         require(_exists(tokenId), "wROME: URI query for nonexistent token");
 
         bytes memory byteString;
-        string memory mintNumber = ((tokenId % 100010672) - 100010000).toString();
+        string memory mintNumber = (tokenId - 100010000).toString();
         string memory tokenHash = _niftyBuilderInstance.tokenIPFSHash(tokenId);
         string memory imageUri = string(abi.encodePacked(_arweaveGatewayUri, _ipfsToArweaveIndex[tokenHash]));
         string memory animationUri = string(abi.encodePacked(_ipfsGatewayUri, tokenHash));
