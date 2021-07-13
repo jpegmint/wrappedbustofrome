@@ -30,6 +30,10 @@ contract MockBustOfRome is ERC721, INiftyBuilder {
     function setDateTimeContract(address dateTimeContract) public {
         _dateTimeContract = dateTimeContract;
     }
+
+    function giftNifty(address collector_address) public override {
+        _mint(collector_address, 1);
+    }
     
     function mint(address to, uint256 tokenId) public {
         _mint(to, tokenId);
