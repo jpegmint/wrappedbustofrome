@@ -1,23 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./api/DateTimeAPI.sol";
-import "./api/NiftyBuilderAPI.sol";
+import "./api/IDateTime.sol";
+import "./api/INiftyBuilder.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
 contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, AccessControl, ReentrancyGuard {
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
-    string private _arweaveGatewayUri = 'https://arweave.net/';
-    string private _ipfsGatewayUri = 'ipfs://';
-    DateTimeAPI private _dateTimeInstance;
-    NiftyBuilderAPI private immutable _niftyBuilderInstance;
+    string private _ipfsGatewayUri;
+    string private _arweaveGatewayUri;
+    IDateTime private _dateTimeInstance;
+    INiftyBuilder private immutable _niftyBuilderInstance;
 
     string[12] previews = [
         "iOKh8ppTX5831s9ip169PfcqZ265rlz_kH-oyDXELtA",  // State 1
@@ -40,14 +39,23 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
     constructor(address niftyBuilderAddress, address dateTimeAddress) ERC721("Wrapped Bust of Rome (One Year) by Daniel Arsham", "wROME") {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, msg.sender);
+
+        setIpfsGatewayUri('ipfs://');
+        setArweaveGatewayUri('https://arweave.net/');
         setDateTimeContract(dateTimeAddress);
-        _niftyBuilderInstance = NiftyBuilderAPI(niftyBuilderAddress);
+        _niftyBuilderInstance = INiftyBuilder(niftyBuilderAddress);
     }
 
-	function wrap(uint256 tokenId) public onlyRole(MINTER_ROLE) nonReentrant {
+    /**
+     * @dev Transfer ROME token into wrap contract and issues wROME token.
+     */
+	function wrap(uint256 tokenId) public onlyRole(MINTER_ROLE) {
 		_niftyBuilderInstance.safeTransferFrom(msg.sender, address(this), tokenId);
 	}
 
+    /**
+     * @dev 
+     */
 	function unwrap(uint256 tokenId) public nonReentrant {
 		require(msg.sender == ownerOf(tokenId), "wROME: transfer of token that is not own");
 		_burn(tokenId);
@@ -61,6 +69,10 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
         emit TokenWrapped(from, tokenId);
 		return this.onERC721Received.selector;
 	}
+
+    function isWrappable(address from, uint256 tokenId) internal view {
+        require(from == address(_niftyBuilderInstance), "wROME: unrecognized contract");
+    }
 
     /**
      * TokenURI override to return IPFS/Arweave assets on-chain and dynamically.
@@ -84,7 +96,7 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
         ));
     }
 
-    /** Configurable IPFS Gateway URI to serve animation files. */
+    /** Configurable IPFS Gateway URI to serve files. */
     function setIpfsGatewayUri(string memory gatewayUri) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _ipfsGatewayUri = gatewayUri;
     }
@@ -96,7 +108,7 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
 
     /** Configurable contract address for DateTime. */ 
     function setDateTimeContract(address contractAddress) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _dateTimeInstance = DateTimeAPI(contractAddress);
+        _dateTimeInstance = IDateTime(contractAddress);
     }
 
     /**
@@ -109,6 +121,7 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
         _niftyBuilderInstance.safeTransferFrom(address(this), msg.sender, tokenId);
     }
 
+    /// Override Boilerplate ///
     function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal override(ERC721, ERC721Enumerable) {
         super._beforeTokenTransfer(from, to, tokenId);
     }

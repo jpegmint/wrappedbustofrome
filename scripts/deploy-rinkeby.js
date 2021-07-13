@@ -14,7 +14,7 @@
 async function main() {
 
     const wROME = await ethers.getContractFactory("WrappedBustOfRomeOneYear");
-    const wRome = await wROME.deploy('0xCC8BD232c0bfE22065d227F2c9aed4827699109C', '0x1cbF0256e1F25de3baB24Ef2EdB54f9d2Fa46Bb2');
+    const wRome = await wROME.deploy('0xCC8BD232c0bfE22065d227F2c9aed4827699109C');
     await wRome.deployed();
     console.log("wROME deployed to:", wRome.address);
 
