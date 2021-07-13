@@ -4,38 +4,24 @@
 
 async function main() {
 
-    const NiftyBuilderMaster = await ethers.getContractFactory("NiftyBuilderMaster");
-    console.log("Deploying NiftyBuilderMaster...");
-    const masterBuilder = await NiftyBuilderMaster.deploy();
-    await masterBuilder.deployed();
-    console.log("NiftyBuilderMaster deployed to:", masterBuilder.address);
-
-    const NiftyRegistry = await ethers.getContractFactory("NiftyRegistry");
-    console.log("Deploying NiftyRegistry...");
-    const niftyRegistry = await NiftyRegistry.deploy(['0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'], []);
-    await niftyRegistry.deployed();
-    console.log("NiftyRegistry deployed to:", niftyRegistry.address);
-    await niftyRegistry.addNiftyKey('0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266');
-
-    const DateTime = await ethers.getContractFactory("DateTime");
+    const DateTime = await ethers.getContractFactory("MockDateTime");
     console.log("Deploying DateTime...");
     const datetime = await DateTime.deploy();
     await datetime.deployed();
     console.log("DateTime deployed to:", datetime.address);
 
-    const Nifty = await ethers.getContractFactory('NiftyBuilderInstance');
+    const Nifty = await ethers.getContractFactory('MockNiftyBuilder');
     console.log("Deploying Nifty...");
-    const nifty = await Nifty.deploy(datetime.address, masterBuilder.address, niftyRegistry.address)
+    const nifty = await Nifty.deploy(datetime.address)
     await nifty.deployed();
     console.log("Nifty deployed to:", nifty.address);
 
-    await nifty.setNumNiftyPermitted(100);
-    await nifty.giftNifty('0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266');
-    await nifty.giftNifty('0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266');
-    await nifty.giftNifty('0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266');
+    await nifty.mint('0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266', 100010001);
+    await nifty.mint('0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266', 100010002);
+    await nifty.mint('0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266', 100010671);
 
     const wROME = await ethers.getContractFactory("WrappedBustOfRomeOneYear");
-    const wRome = await wROME.deploy(nifty.address, datetime.address);
+    const wRome = await wROME.deploy(nifty.address);
     await wRome.deployed();
     console.log("wROME deployed to:", wRome.address);
 
@@ -47,7 +33,7 @@ async function main() {
         console.log('Unwrapped', from, (tokenId).toString());
     });
 
-    await nifty.setApprovalForAll(wRome.address, 1);
+    await nifty.approve(wRome.address, 100010001);
     await wRome.wrap(100010001);
     await wRome.tokenURI(100010001);
     await wRome.setArweaveGatewayUri('ar://');

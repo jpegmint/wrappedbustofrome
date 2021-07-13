@@ -2,7 +2,7 @@ require('@nomiclabs/hardhat-ethers');
 require("@nomiclabs/hardhat-etherscan");
 require("@nomiclabs/hardhat-waffle");
 
-const { etherscanApiKey, alchemyApiKey, mnemonic } = require('./secrets.json');
+const { etherscanApiKey, alchemyApiKey, mnemonic, alchemyMainnetApiKey } = require('./secrets.json');
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -20,6 +20,10 @@ module.exports = {
   networks: {
     rinkeby: {
       url: `https://eth-rinkeby.alchemyapi.io/v2/${alchemyApiKey}`,
+      accounts: {mnemonic: mnemonic}
+    },
+    mainnet: {
+      url: `https://eth-mainnet.alchemyapi.io/v2/${alchemyMainnetApiKey}`,
       accounts: {mnemonic: mnemonic}
     }
   },
