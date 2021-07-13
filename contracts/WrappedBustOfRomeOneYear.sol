@@ -48,34 +48,47 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
     }
 
     /**
-     * @dev Transfer ROME token into wrap contract and issues wROME token.
+     * @dev Transfers ROME token into wrap contract and issues wROME token.
      */
-	function wrap(uint256 tokenId) public {
-		_niftyBuilderInstance.safeTransferFrom(msg.sender, address(this), tokenId);
+	function wrap(uint256 tokenId) external nonReentrant {
+        require(hasRole(MINTER_ROLE, msg.sender), 'wROME: Caller not authorized to wrap.');
+        require(_niftyBuilderInstance.ownerOf(tokenId) == msg.sender, 'wROME: Caller must own NFTs');
+        require(_niftyBuilderInstance.getApproved(tokenId) == address(this), 'wROME: Contract must be given approval to wrap NFT.');
+        require(tokenId >= APPROVED_TOKENID_MIN && tokenId <= APPROVED_TOKENID_MAX, 'wROME: Unrecognized tokenId.');
+
+		_niftyBuilderInstance.transferFrom(msg.sender, address(this), tokenId);
+        _mintWrapped(msg.sender, tokenId);
 	}
 
     /**
      * @dev Burn wROME token and transfer original ROME back to sender.
      */
-	function unwrap(uint256 tokenId) public nonReentrant {
-		require(msg.sender == ownerOf(tokenId), "wROME: transfer of token that is not own");
+	function unwrap(uint256 tokenId) external nonReentrant {
+		require(msg.sender == ownerOf(tokenId), "wROME: Caller does not wrapped token.");
 		_burn(tokenId);
 		_niftyBuilderInstance.safeTransferFrom(address(this), msg.sender, tokenId);
         emit TokenUnwrapped(msg.sender, tokenId);
 	}
 
     /**
-     * @dev Wrap function issues wROME token; called via wrap() or via safeTransferFrom().
+     * @dev Receives ROME token and mints wROME token back to sender.
      */
-	function onERC721Received(address, address from, uint256 tokenId, bytes calldata) public override nonReentrant returns (bytes4) {
-        require(hasRole(MINTER_ROLE, from), 'wROME: unauthorized to wrap');
-        require(msg.sender == address(_niftyBuilderInstance), "wROME: unrecognized contract");
+	function onERC721Received(address, address from, uint256 tokenId, bytes calldata) external override nonReentrant returns (bytes4) {
+        require(hasRole(MINTER_ROLE, from), 'wROME: Caller not authorized to wrap.');
+        require(msg.sender == address(_niftyBuilderInstance), "wROME: Unrecognized contract.");
         require(tokenId >= APPROVED_TOKENID_MIN && tokenId <= APPROVED_TOKENID_MAX, 'wROME: unrecognized tokenId');
 
-		_safeMint(from, tokenId);
-        emit TokenWrapped(from, tokenId);
+        _mintWrapped(from, tokenId);
 		return this.onERC721Received.selector;
 	}
+
+    /**
+     * @dev Mints wROME token.
+     */
+    function _mintWrapped(address to, uint256 tokenId) internal {
+		_safeMint(to, tokenId);
+        emit TokenWrapped(to, tokenId);
+    }
 
     /**
      * @dev TokenURI override to return metadata and IPFS/Arweave assets on-chain and dynamically.

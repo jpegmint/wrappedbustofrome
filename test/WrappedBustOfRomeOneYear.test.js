@@ -33,7 +33,7 @@ describe('wROME', function () {
         it('reverts if wrapped before approval', async function () {
             var tokenId = 100010001;
             await this.nifty.mint(this.owner.address, tokenId);
-            await expect(this.wRome.wrap(tokenId)).to.be.revertedWith('ERC721: transfer caller is not owner nor approved');
+            await expect(this.wRome.wrap(tokenId)).to.be.revertedWith('wROME: Contract must be given approval to wrap NFT.');
         });
 
         it('reverts if wrapped without MINTER_ROLE', async function () {
@@ -42,22 +42,17 @@ describe('wROME', function () {
             await this.nifty.connect(this.addr1).setApprovalForAll(this.wRome.address, true);
 
             await expect(this.nifty.connect(this.addr1)['safeTransferFrom(address,address,uint256)'](this.addr1.address, this.wRome.address, tokenId))
-                .to.be.revertedWith('wROME: unauthorized to wrap');
+                .to.be.revertedWith('wROME: Caller not authorized to wrap.');
             await expect(this.wRome.connect(this.addr1).wrap(tokenId))
-                .to.be.revertedWith('wROME: unauthorized to wrap');
+                .to.be.revertedWith('wROME: Caller not authorized to wrap.');
         });
         
-        it('correctly wraps after setApprovalForAll', async function () {
+        it('reverts if wrapped after setApprovalForAll', async function () {
             var tokenId = 100010001;
             await this.nifty.mint(this.owner.address, tokenId);
             await this.nifty.setApprovalForAll(this.wRome.address, true);
 
-            await expect(await this.wRome.wrap(tokenId))
-                .to.emit(this.wRome, 'TokenWrapped')
-                .withArgs(this.owner.address, tokenId);
-            expect(await this.wRome.totalSupply()).to.equal(1);
-            expect(await this.nifty.ownerOf(tokenId)).to.equal(this.wRome.address);
-            expect(await this.wRome.ownerOf(tokenId)).to.equal(this.owner.address);
+            await expect(this.wRome.wrap(tokenId)).to.be.revertedWith('wROME: Contract must be given approval to wrap NFT.');
         });
         
         it('correctly wraps after approve', async function () {
@@ -81,7 +76,7 @@ describe('wROME', function () {
             await this.nifty.approve(this.wRome.address, tokenId);
 
             await expect(this.wRome.wrap(tokenId))
-                .to.be.revertedWith('wROME: unrecognized tokenId');
+                .to.be.revertedWith('wROME: Unrecognized tokenId.');
         });
         
         it('reverts if tokenId greater than MAX', async function () {
@@ -90,7 +85,7 @@ describe('wROME', function () {
             await this.nifty.approve(this.wRome.address, tokenId);
 
             await expect(this.wRome.wrap(tokenId))
-                .to.be.revertedWith('wROME: unrecognized tokenId');
+                .to.be.revertedWith('wROME: Unrecognized tokenId.');
         });
         
         it('correctly wraps if tokenId equal to MIN', async function () {
