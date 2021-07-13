@@ -8,7 +8,6 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract MockBustOfRome is ERC721, INiftyBuilder {
 
-    uint256 private _counter;
     address private _dateTimeContract;
 
     string[12] artifact = ["QmQdb77jfHZSwk8dGpN3mqx8q4N7EUNytiAgEkXrMPbMVw", //State 1
@@ -26,15 +25,13 @@ contract MockBustOfRome is ERC721, INiftyBuilder {
     
     constructor(address dateTimeContract) ERC721('MockBustOfRome', 'mROME') {
         _dateTimeContract = dateTimeContract;
-        _counter = 1;
     }
 
     function setDateTimeContract(address dateTimeContract) public {
         _dateTimeContract = dateTimeContract;
     }
     
-    function mint(address to) public {
-        uint256 tokenId = ((1 * 100000000) + (1 * 10000) + _counter++);
+    function mint(address to, uint256 tokenId) public {
         _mint(to, tokenId);
     }
 
