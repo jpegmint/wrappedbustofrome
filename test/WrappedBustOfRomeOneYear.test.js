@@ -114,6 +114,26 @@ describe('wROME', function () {
             expect(await this.nifty.ownerOf(tokenId)).to.equal(this.wRome.address);
             expect(await this.wRome.ownerOf(tokenId)).to.equal(this.owner.address);
         });
+
+        it('correctly mints first 20 tokens', async function () {
+            for (let i = 1; i <= 20; i++) {
+                var tokenId = 100010000 + i;
+                await this.nifty.mint(this.owner.address, tokenId);
+                await this.nifty['safeTransferFrom(address,address,uint256)'](this.owner.address, this.wRome.address, tokenId);
+                expect(await this.wRome.totalSupply()).to.equal(i);
+                expect(await this.wRome.tokenURI(tokenId)).to.contain('#' + (tokenId - 100010000) + '/671');
+            }
+        });
+
+        it('correctly mints last 20 tokens', async function () {
+            for (let i = 1; i <= 20; i++) {
+                var tokenId = 100010000 + i + 651;
+                await this.nifty.mint(this.owner.address, tokenId);
+                await this.nifty['safeTransferFrom(address,address,uint256)'](this.owner.address, this.wRome.address, tokenId);
+                expect(await this.wRome.totalSupply()).to.equal(i);
+                expect(await this.wRome.tokenURI(tokenId)).to.contain('#' + (tokenId - 100010000) + '/671');
+            }
+        });
     });
 
     describe('unwrapping', function () {
