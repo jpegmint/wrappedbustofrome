@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./api/IDateTime.sol";
 import "./api/INiftyBuilder.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
@@ -10,7 +11,10 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
 contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, AccessControl, ReentrancyGuard {
+    using Strings for uint256;
 
+    uint256 public constant MIN_TOKEN_IDS = 100010001;
+    uint256 public constant MAX_TOKEN_IDS = 100010671;
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     string private _ipfsGatewayUri;
@@ -49,12 +53,13 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
     /**
      * @dev Transfer ROME token into wrap contract and issues wROME token.
      */
-	function wrap(uint256 tokenId) public onlyRole(MINTER_ROLE) {
+	function wrap(uint256 tokenId) public {
+        require(hasRole(MINTER_ROLE, msg.sender), 'wROME: unauthorized to wrap');
 		_niftyBuilderInstance.safeTransferFrom(msg.sender, address(this), tokenId);
 	}
 
     /**
-     * @dev 
+     * @dev Burn wROME token and transfer original ROME back to sender.
      */
 	function unwrap(uint256 tokenId) public nonReentrant {
 		require(msg.sender == ownerOf(tokenId), "wROME: transfer of token that is not own");
@@ -63,37 +68,43 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
         emit TokenUnwrapped(msg.sender, tokenId);
 	}
 
+    /**
+     * @dev Wrap function issues wROME token; called via wrap() or via safeTransferFrom().
+     */
 	function onERC721Received(address, address from, uint256 tokenId, bytes calldata) public override nonReentrant returns (bytes4) {
-		require(msg.sender == address(_niftyBuilderInstance), "wROME: unrecognized contract");
+        require(hasRole(MINTER_ROLE, from), 'wROME: unauthorized to wrap');
+        require(msg.sender == address(_niftyBuilderInstance), "wROME: unrecognized contract");
+        require(tokenId >= MIN_TOKEN_IDS && tokenId <= MAX_TOKEN_IDS, 'wROME: unrecognized tokenId');
+
 		_safeMint(from, tokenId);
         emit TokenWrapped(from, tokenId);
 		return this.onERC721Received.selector;
 	}
 
-    function isWrappable(address from, uint256 tokenId) internal view {
-        require(from == address(_niftyBuilderInstance), "wROME: unrecognized contract");
-    }
-
     /**
-     * TokenURI override to return IPFS/Arweave assets on-chain and dynamically.
+     * @dev TokenURI override to return IPFS/Arweave assets on-chain and dynamically.
      */
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
 
         require(_exists(tokenId), "wROME: URI query for nonexistent token");
 
+        bytes memory byteString;
+        uint256 mintNumber = (tokenId % 100010672) - 100010000;
         uint8 month =_dateTimeInstance.getMonth(block.timestamp) - 1;
         string memory imageUri = string(abi.encodePacked(_arweaveGatewayUri, previews[month]));
         string memory animationUri = string(abi.encodePacked(_ipfsGatewayUri, _niftyBuilderInstance.tokenIPFSHash(tokenId)));
 
-        return string(abi.encodePacked(
+        byteString = abi.encodePacked(
             'data:application/json;utf8,{',
-                '"name": "Eroding and Reforming Bust of Rome (One Year)",',
+                '"name": "Eroding and Reforming Bust of Rome (One Year) #', (mintNumber).toString(), '/671",',
                 '"description": "With his debut NFT release, Daniel Arsham introduces a concept never before seen on Nifty Gateway. His *Eroding and Reforming Bust of Rome (One Year)* piece will erode, reform, and change based on the time of year.",',
                 '"external_url": "https://niftygateway.com/collections/danielarsham",',
                 '"image": "', imageUri, '",',
                 '"animation_url": "', animationUri, '"',
             '}'
-        ));
+        );
+        
+        return string(byteString);
     }
 
     /** Configurable IPFS Gateway URI to serve files. */
