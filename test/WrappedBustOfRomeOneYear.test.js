@@ -143,7 +143,7 @@ describe('wROME', function () {
     });
 
     describe('tokenURI', function () {
-        it.only('correctly generates tokenURI', async function () {
+        it('correctly generates tokenURI', async function () {
             var tokenId = 100010001;
             await this.nifty.mint(this.owner.address, tokenId);
             await this.nifty['safeTransferFrom(address,address,uint256)'](this.owner.address, this.wRome.address, tokenId);
@@ -151,6 +151,33 @@ describe('wROME', function () {
             this.datetime.mockSetMonth(5);
             expect(await this.wRome.tokenURI(tokenId))
                 .to.equal('data:application/json;utf8,{"name": "Eroding and Reforming Bust of Rome (One Year) #1/671","created_by": "Daniel Arsham","description": "**Daniel Arsham** (b. 1980)\\n***Eroding and Reforming Bust of Rome (One Year)***, 2021\\n\\nWith his debut NFT release, Daniel Arsham introduces a concept never before seen on Nifty Gateway. His *Eroding and Reforming Bust of Rome (One Year)* piece will erode, reform, and change based on the time of year.","external_url": "https://niftygateway.com/collections/danielarsham","image": "https://arweave.net/d8mJGLKJhg1Gl2OW1qQjcH8Y8tYBCvNWUuGH6iXd18U","image_url": "https://arweave.net/d8mJGLKJhg1Gl2OW1qQjcH8Y8tYBCvNWUuGH6iXd18U","animation": "ipfs://QmZwHt9ZhCgVMqpcFDhwKSA3higVYQXzyaPqh2BPjjXJXU","animation_url": "ipfs://QmZwHt9ZhCgVMqpcFDhwKSA3higVYQXzyaPqh2BPjjXJXU","attributes":[{"trait_type": "Edition", "display_type": "number", "value": 1, "max_value": 671}]}');
+        });
+
+        it('correctly generates matching image/animation', async function () {
+            var tokenId = 100010001;
+            await this.nifty.mint(this.owner.address, tokenId);
+            await this.nifty['safeTransferFrom(address,address,uint256)'](this.owner.address, this.wRome.address, tokenId);
+
+            var ipfsToArweaveMap = {
+                "QmQdb77jfHZSwk8dGpN3mqx8q4N7EUNytiAgEkXrMPbMVw": "iOKh8ppTX5831s9ip169PfcqZ265rlz_kH-oyDXELtA", //State 1
+                "QmS3kaQnxb28vcXQg35PrGarJKkSysttZdNLdZp3JquttQ": "4iJ3Igr90bfEkBMeQv1t2S4ctK2X-I18hnbal2YFfWI", //State 2
+                "QmX8beRtZAsed6naFWqddKejV33NoXotqZoGTuDaV5SHqN": "y4yuf5VvfAYOl3Rm5DTsAaneJDXwFJGBThI6VG3b7co", //State 3
+                "QmQvsAMYzJm8kGQ7YNF5ziWUb6hr7vqdmkrn1qEPDykYi4": "29SOcovLFC5Q4B-YJzgisGgRXllDHoN_l5c8Tan3jHs", //State 4
+                "QmZwHt9ZhCgVMqpcFDhwKSA3higVYQXzyaPqh2BPjjXJXU": "d8mJGLKJhg1Gl2OW1qQjcH8Y8tYBCvNWUuGH6iXd18U", //State 5
+                "Qmd2MNfgzPYXGMS1ZgdsiWuAkriRRx15pfRXU7ZVK22jce": "siy0OInjmvElSk2ORJ4VNiQC1_dkdKzNRpmkOBBy2hA", //State 6
+                "QmWcYzNdUYbMzrM7bGgTZXVE4GBm7v4dQneKb9fxgjMdAX": "5euBxS7JvRrqb7fxh4wLjEW5abPswocAGTHjqlrkyBE", //State 7
+                "QmaXX7VuBY1dCeK78TTGEvYLTF76sf6fnzK7TJSni4PHxj": "7IK1u-DsuAj0nQzpwmQpo66dwpWx8PS9i-xv6aS6y6I", //State 8
+                "QmaqeJnzF2cAdfDrYRAw6VwzNn9dY9bKTyUuTHg1gUSQY7": "LWpLIs3-PUvV6WvXa-onc5QZ5FeYiEpiIwRfc_u64ss", //State 9
+                "QmSZquD6yGy5QvsJnygXUnWKrsKJvk942L8nzs6YZFKbxY": "vzLvsueGrzpVI_MZBogAw57Pi1OdynahcolZPpvhEQI", //State 10
+                "QmYtdrfPd3jAWWpjkd24NzLGqH5TDsHNvB8Qtqu6xnBcJF": "iEh79QQjaMjKd0I6d6eM8UYcFw-pj5_gBdGhTOTB54g", //State 11
+                "QmesagGNeyjDvJ2N5oc8ykBiwsiE7gdk9vnfjjAe3ipjx4": "b132CTM45LOEMwzOqxnPqtDqlPPwcaQ0ztQ5OWhBnvQ", //State 12
+            }
+
+            var month = 1;
+            for (let [ipfsHash, arweaveHash] of Object.entries(ipfsToArweaveMap)) {
+                this.datetime.mockSetMonth(month++);
+                expect(await this.wRome.tokenURI(tokenId)).to.contain(ipfsHash).and.contain(arweaveHash);
+            }
         });
     });
 
