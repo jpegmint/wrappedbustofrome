@@ -12,9 +12,10 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, AccessControl, ReentrancyGuard {
     using Strings for uint256;
 
-    uint256 public constant MIN_TOKEN_IDS = 100010001;
-    uint256 public constant MAX_TOKEN_IDS = 100010671;
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+
+    uint256 public constant APPROVED_TOKENID_MIN = 100010001;
+    uint256 public constant APPROVED_TOKENID_MAX = 100010671;
 
     string private _ipfsGatewayUri;
     string private _arweaveGatewayUri;
@@ -70,7 +71,7 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
 	function onERC721Received(address, address from, uint256 tokenId, bytes calldata) public override nonReentrant returns (bytes4) {
         require(hasRole(MINTER_ROLE, from), 'wROME: unauthorized to wrap');
         require(msg.sender == address(_niftyBuilderInstance), "wROME: unrecognized contract");
-        require(tokenId >= MIN_TOKEN_IDS && tokenId <= MAX_TOKEN_IDS, 'wROME: unrecognized tokenId');
+        require(tokenId >= APPROVED_TOKENID_MIN && tokenId <= APPROVED_TOKENID_MAX, 'wROME: unrecognized tokenId');
 
 		_safeMint(from, tokenId);
         emit TokenWrapped(from, tokenId);
@@ -78,7 +79,7 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
 	}
 
     /**
-     * @dev TokenURI override to return IPFS/Arweave assets on-chain and dynamically.
+     * @dev TokenURI override to return metadata and IPFS/Arweave assets on-chain and dynamically.
      */
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
 
@@ -93,10 +94,12 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
         byteString = abi.encodePacked(byteString, 'data:application/json;utf8,{');
         byteString = abi.encodePacked(byteString, '"name": "Eroding and Reforming Bust of Rome (One Year) #', mintNumber, '/671",');
         byteString = abi.encodePacked(byteString, '"created_by": "Daniel Arsham",');
-        byteString = abi.encodePacked(byteString, '"description": "With his debut NFT release, Daniel Arsham introduces a concept never before seen on Nifty Gateway. His *Eroding and Reforming Bust of Rome (One Year)* piece will erode, reform, and change based on the time of year.",');
+        byteString = abi.encodePacked(byteString, '"description": "**Daniel Arsham** (b. 1980)\\n***Eroding and Reforming Bust of Rome (One Year)***, 2021\\n\\nWith his debut NFT release, Daniel Arsham introduces a concept never before seen on Nifty Gateway. His *Eroding and Reforming Bust of Rome (One Year)* piece will erode, reform, and change based on the time of year.",');
         byteString = abi.encodePacked(byteString, '"external_url": "https://niftygateway.com/collections/danielarsham",');
         byteString = abi.encodePacked(byteString, '"image": "', imageUri, '",', '"image_url": "', imageUri, '",');
-        byteString = abi.encodePacked(byteString, '"animation": "', animationUri, '",', '"animation_url": "', animationUri, '"}');
+        byteString = abi.encodePacked(byteString, '"animation": "', animationUri, '",', '"animation_url": "', animationUri, '",');
+        byteString = abi.encodePacked(byteString, '"attributes":[{"trait_type": "Edition", "display_type": "number", "value": ', mintNumber, ', "max_value": 671}]');
+        byteString = abi.encodePacked(byteString, '}');
         
         return string(byteString);
     }

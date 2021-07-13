@@ -24,7 +24,7 @@ describe('wROME', function () {
         await this.datetime.deployed();
         this.nifty = await this.Nifty.deploy(this.datetime.address);
         await this.nifty.deployed();
-        this.wRome = await this.wROME.deploy(this.nifty.address, this.datetime.address);
+        this.wRome = await this.wROME.deploy(this.nifty.address);
         await this.wRome.deployed();
     });
     
@@ -143,15 +143,14 @@ describe('wROME', function () {
     });
 
     describe('tokenURI', function () {
-        it('correctly generates tokenURI', async function () {
+        it.only('correctly generates tokenURI', async function () {
             var tokenId = 100010001;
             await this.nifty.mint(this.owner.address, tokenId);
             await this.nifty['safeTransferFrom(address,address,uint256)'](this.owner.address, this.wRome.address, tokenId);
 
             this.datetime.mockSetMonth(5);
-
             expect(await this.wRome.tokenURI(tokenId))
-                .to.equal('data:application/json;utf8,{"name": "Eroding and Reforming Bust of Rome (One Year) #1/671","description": "With his debut NFT release, Daniel Arsham introduces a concept never before seen on Nifty Gateway. His *Eroding and Reforming Bust of Rome (One Year)* piece will erode, reform, and change based on the time of year.","external_url": "https://niftygateway.com/collections/danielarsham","image": "https://arweave.net/d8mJGLKJhg1Gl2OW1qQjcH8Y8tYBCvNWUuGH6iXd18U","animation_url": "ipfs://QmZwHt9ZhCgVMqpcFDhwKSA3higVYQXzyaPqh2BPjjXJXU"}');
+                .to.equal('data:application/json;utf8,{"name": "Eroding and Reforming Bust of Rome (One Year) #1/671","created_by": "Daniel Arsham","description": "**Daniel Arsham** (b. 1980)\\n***Eroding and Reforming Bust of Rome (One Year)***, 2021\\n\\nWith his debut NFT release, Daniel Arsham introduces a concept never before seen on Nifty Gateway. His *Eroding and Reforming Bust of Rome (One Year)* piece will erode, reform, and change based on the time of year.","external_url": "https://niftygateway.com/collections/danielarsham","image": "https://arweave.net/d8mJGLKJhg1Gl2OW1qQjcH8Y8tYBCvNWUuGH6iXd18U","image_url": "https://arweave.net/d8mJGLKJhg1Gl2OW1qQjcH8Y8tYBCvNWUuGH6iXd18U","animation": "ipfs://QmZwHt9ZhCgVMqpcFDhwKSA3higVYQXzyaPqh2BPjjXJXU","animation_url": "ipfs://QmZwHt9ZhCgVMqpcFDhwKSA3higVYQXzyaPqh2BPjjXJXU","attributes":[{"trait_type": "Edition", "display_type": "number", "value": 1, "max_value": 671}]}');
         });
     });
 
