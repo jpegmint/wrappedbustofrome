@@ -39,7 +39,7 @@ describe('wROME', function () {
         it('reverts if wrapped without MINTER_ROLE', async function () {
             var tokenId = 100010001;
             await this.nifty.mint(this.addr1.address, tokenId);
-            await this.nifty.connect(this.addr1).setApprovalForAll(this.wRome.address, true);
+            await this.nifty.connect(this.addr1).approve(this.wRome.address, tokenId);
 
             await expect(this.nifty.connect(this.addr1)['safeTransferFrom(address,address,uint256)'](this.addr1.address, this.wRome.address, tokenId))
                 .to.be.revertedWith('wROME: Caller not authorized to wrap.');
