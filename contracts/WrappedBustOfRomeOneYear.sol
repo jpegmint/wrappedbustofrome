@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./api/IDateTime.sol";
 import "./api/INiftyBuilder.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
@@ -19,35 +18,32 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
 
     string private _ipfsGatewayUri;
     string private _arweaveGatewayUri;
-    IDateTime private _dateTimeInstance;
+    mapping(string => string) private _previews;
     INiftyBuilder private immutable _niftyBuilderInstance;
-
-    string[12] previews = [
-        "iOKh8ppTX5831s9ip169PfcqZ265rlz_kH-oyDXELtA",  // State 1
-        "4iJ3Igr90bfEkBMeQv1t2S4ctK2X-I18hnbal2YFfWI",  // State 2
-        "y4yuf5VvfAYOl3Rm5DTsAaneJDXwFJGBThI6VG3b7co",  // State 3
-        "29SOcovLFC5Q4B-YJzgisGgRXllDHoN_l5c8Tan3jHs",  // State 4
-        "d8mJGLKJhg1Gl2OW1qQjcH8Y8tYBCvNWUuGH6iXd18U",  // State 5
-        "siy0OInjmvElSk2ORJ4VNiQC1_dkdKzNRpmkOBBy2hA",  // State 6
-        "5euBxS7JvRrqb7fxh4wLjEW5abPswocAGTHjqlrkyBE",  // State 7
-        "7IK1u-DsuAj0nQzpwmQpo66dwpWx8PS9i-xv6aS6y6I",  // State 8
-        "LWpLIs3-PUvV6WvXa-onc5QZ5FeYiEpiIwRfc_u64ss",  // State 9
-        "iEh79QQjaMjKd0I6d6eM8UYcFw-pj5_gBdGhTOTB54g",  // State 10
-        "vzLvsueGrzpVI_MZBogAw57Pi1OdynahcolZPpvhEQI",  // State 11
-        "b132CTM45LOEMwzOqxnPqtDqlPPwcaQ0ztQ5OWhBnvQ"   // State 12
-    ];
 
     event TokenWrapped(address indexed from, uint256 tokenId);
     event TokenUnwrapped(address indexed from, uint256 tokenId);
 
-    constructor(address niftyBuilderAddress, address dateTimeAddress) ERC721("Wrapped Bust of Rome (One Year) by Daniel Arsham", "wROME") {
+    constructor(address niftyBuilderAddress) ERC721("Wrapped Bust of Rome (One Year) by Daniel Arsham", "wROME") {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, msg.sender);
 
         setIpfsGatewayUri('ipfs://');
         setArweaveGatewayUri('https://arweave.net/');
-        setDateTimeContract(dateTimeAddress);
         _niftyBuilderInstance = INiftyBuilder(niftyBuilderAddress);
+
+        _previews["QmQdb77jfHZSwk8dGpN3mqx8q4N7EUNytiAgEkXrMPbMVw"] = "iOKh8ppTX5831s9ip169PfcqZ265rlz_kH-oyDXELtA"; //State 1
+        _previews["QmS3kaQnxb28vcXQg35PrGarJKkSysttZdNLdZp3JquttQ"] = "4iJ3Igr90bfEkBMeQv1t2S4ctK2X-I18hnbal2YFfWI"; //State 2
+        _previews["QmX8beRtZAsed6naFWqddKejV33NoXotqZoGTuDaV5SHqN"] = "y4yuf5VvfAYOl3Rm5DTsAaneJDXwFJGBThI6VG3b7co"; //State 3
+        _previews["QmQvsAMYzJm8kGQ7YNF5ziWUb6hr7vqdmkrn1qEPDykYi4"] = "29SOcovLFC5Q4B-YJzgisGgRXllDHoN_l5c8Tan3jHs"; //State 4
+        _previews["QmZwHt9ZhCgVMqpcFDhwKSA3higVYQXzyaPqh2BPjjXJXU"] = "d8mJGLKJhg1Gl2OW1qQjcH8Y8tYBCvNWUuGH6iXd18U"; //State 5
+        _previews["Qmd2MNfgzPYXGMS1ZgdsiWuAkriRRx15pfRXU7ZVK22jce"] = "siy0OInjmvElSk2ORJ4VNiQC1_dkdKzNRpmkOBBy2hA"; //State 6
+        _previews["QmWcYzNdUYbMzrM7bGgTZXVE4GBm7v4dQneKb9fxgjMdAX"] = "5euBxS7JvRrqb7fxh4wLjEW5abPswocAGTHjqlrkyBE"; //State 7
+        _previews["QmaXX7VuBY1dCeK78TTGEvYLTF76sf6fnzK7TJSni4PHxj"] = "7IK1u-DsuAj0nQzpwmQpo66dwpWx8PS9i-xv6aS6y6I"; //State 8
+        _previews["QmaqeJnzF2cAdfDrYRAw6VwzNn9dY9bKTyUuTHg1gUSQY7"] = "LWpLIs3-PUvV6WvXa-onc5QZ5FeYiEpiIwRfc_u64ss"; //State 9
+        _previews["QmSZquD6yGy5QvsJnygXUnWKrsKJvk942L8nzs6YZFKbxY"] = "iEh79QQjaMjKd0I6d6eM8UYcFw-pj5_gBdGhTOTB54g"; //State 10
+        _previews["QmYtdrfPd3jAWWpjkd24NzLGqH5TDsHNvB8Qtqu6xnBcJF"] = "vzLvsueGrzpVI_MZBogAw57Pi1OdynahcolZPpvhEQI"; //State 11
+        _previews["QmesagGNeyjDvJ2N5oc8ykBiwsiE7gdk9vnfjjAe3ipjx4"] = "b132CTM45LOEMwzOqxnPqtDqlPPwcaQ0ztQ5OWhBnvQ"; //State 12
     }
 
     /**
@@ -89,20 +85,18 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
         require(_exists(tokenId), "wROME: URI query for nonexistent token");
 
         bytes memory byteString;
-        uint256 mintNumber = (tokenId % 100010672) - 100010000;
-        uint8 month =_dateTimeInstance.getMonth(block.timestamp) - 1;
-        string memory imageUri = string(abi.encodePacked(_arweaveGatewayUri, previews[month]));
-        string memory animationUri = string(abi.encodePacked(_ipfsGatewayUri, _niftyBuilderInstance.tokenIPFSHash(tokenId)));
+        string memory mintNumber = ((tokenId % 100010672) - 100010000).toString();
+        string memory tokenHash = _niftyBuilderInstance.tokenIPFSHash(tokenId);
+        string memory imageUri = string(abi.encodePacked(_arweaveGatewayUri, _previews[tokenHash]));
+        string memory animationUri = string(abi.encodePacked(_ipfsGatewayUri, tokenHash));
 
-        byteString = abi.encodePacked(
-            'data:application/json;utf8,{',
-                '"name": "Eroding and Reforming Bust of Rome (One Year) #', (mintNumber).toString(), '/671",',
-                '"description": "With his debut NFT release, Daniel Arsham introduces a concept never before seen on Nifty Gateway. His *Eroding and Reforming Bust of Rome (One Year)* piece will erode, reform, and change based on the time of year.",',
-                '"external_url": "https://niftygateway.com/collections/danielarsham",',
-                '"image": "', imageUri, '",',
-                '"animation_url": "', animationUri, '"',
-            '}'
-        );
+        byteString = abi.encodePacked(byteString, 'data:application/json;utf8,{');
+        byteString = abi.encodePacked(byteString, '"name": "Eroding and Reforming Bust of Rome (One Year) #', mintNumber, '/671",');
+        byteString = abi.encodePacked(byteString, '"created_by": "Daniel Arsham",');
+        byteString = abi.encodePacked(byteString, '"description": "With his debut NFT release, Daniel Arsham introduces a concept never before seen on Nifty Gateway. His *Eroding and Reforming Bust of Rome (One Year)* piece will erode, reform, and change based on the time of year.",');
+        byteString = abi.encodePacked(byteString, '"external_url": "https://niftygateway.com/collections/danielarsham",');
+        byteString = abi.encodePacked(byteString, '"image": "', imageUri, '",', '"image_url": "', imageUri, '",');
+        byteString = abi.encodePacked(byteString, '"animation": "', animationUri, '",', '"animation_url": "', animationUri, '"}');
         
         return string(byteString);
     }
@@ -115,11 +109,6 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
     /** Configurable Arewave gateway to serve image preview files. */
     function setArweaveGatewayUri(string memory gatewayUri) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _arweaveGatewayUri = gatewayUri;
-    }
-
-    /** Configurable contract address for DateTime. */ 
-    function setDateTimeContract(address contractAddress) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _dateTimeInstance = IDateTime(contractAddress);
     }
 
     /**
