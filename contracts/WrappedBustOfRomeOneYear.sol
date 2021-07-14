@@ -7,9 +7,8 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 
-contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, AccessControl, ReentrancyGuard {
+contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, AccessControl, ReentrancyGuard {
     using Strings for uint256;
 
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -17,8 +16,6 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
     uint256 public constant APPROVED_TOKENID_MIN = 100010001;
     uint256 public constant APPROVED_TOKENID_MAX = 100010671;
 
-    string private _ipfsGatewayUri;
-    string private _arweaveGatewayUri;
     mapping(string => string) private _ipfsToArweaveIndex;
     INiftyBuilder private immutable _niftyBuilderInstance;
 
@@ -29,9 +26,6 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, msg.sender);
         _niftyBuilderInstance = INiftyBuilder(niftyBuilderAddress);
-
-        setIpfsGatewayUri('ipfs://');
-        setArweaveGatewayUri('https://arweave.net/');
 
         _ipfsToArweaveIndex["QmQdb77jfHZSwk8dGpN3mqx8q4N7EUNytiAgEkXrMPbMVw"] = "iOKh8ppTX5831s9ip169PfcqZ265rlz_kH-oyDXELtA"; //State 1
         _ipfsToArweaveIndex["QmS3kaQnxb28vcXQg35PrGarJKkSysttZdNLdZp3JquttQ"] = "4iJ3Igr90bfEkBMeQv1t2S4ctK2X-I18hnbal2YFfWI"; //State 2
@@ -100,8 +94,8 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
         bytes memory byteString;
         string memory mintNumber = (tokenId - 100010000).toString();
         string memory tokenHash = _niftyBuilderInstance.tokenIPFSHash(tokenId);
-        string memory imageUri = string(abi.encodePacked(_arweaveGatewayUri, _ipfsToArweaveIndex[tokenHash]));
-        string memory animationUri = string(abi.encodePacked(_ipfsGatewayUri, tokenHash));
+        string memory imageUri = string(abi.encodePacked('https://arweave.net/', _ipfsToArweaveIndex[tokenHash]));
+        string memory animationUri = string(abi.encodePacked('ipfs://', tokenHash));
 
         byteString = abi.encodePacked(byteString, 'data:application/json;utf8,{');
         byteString = abi.encodePacked(byteString, '"name": "Eroding and Reforming Bust of Rome (One Year) #', mintNumber, '/671",');
@@ -121,16 +115,6 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
         return string(byteString);
     }
 
-    /** Configurable IPFS Gateway URI to serve files. */
-    function setIpfsGatewayUri(string memory gatewayUri) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _ipfsGatewayUri = gatewayUri;
-    }
-
-    /** Configurable Arewave gateway to serve image preview files. */
-    function setArweaveGatewayUri(string memory gatewayUri) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _arweaveGatewayUri = gatewayUri;
-    }
-
     /**
      * Recovery function to extract orphaned ROME tokens. Works only if wROME contract
      * owns unwrapped ROME token.
@@ -142,11 +126,7 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
     }
 
     /// Override Boilerplate ///
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal override(ERC721, ERC721Enumerable) {
-        super._beforeTokenTransfer(from, to, tokenId);
-    }
-
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721Enumerable, AccessControl) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721, AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 }

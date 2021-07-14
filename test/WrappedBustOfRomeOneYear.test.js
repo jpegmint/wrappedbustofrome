@@ -63,7 +63,6 @@ describe('wROME', function () {
             await expect(await this.wRome.wrap(tokenId))
                 .to.emit(this.wRome, 'TokenWrapped')
                 .withArgs(this.owner.address, tokenId);
-            expect(await this.wRome.totalSupply()).to.equal(1);
             expect(await this.nifty.ownerOf(tokenId)).to.equal(this.wRome.address);
             expect(await this.wRome.ownerOf(tokenId)).to.equal(this.owner.address);
         });
@@ -94,7 +93,6 @@ describe('wROME', function () {
             await this.nifty.approve(this.wRome.address, tokenId);
 
             await this.wRome.wrap(tokenId);
-            expect(await this.wRome.totalSupply()).to.equal(1);
             expect(await this.nifty.ownerOf(tokenId)).to.equal(this.wRome.address);
             expect(await this.wRome.ownerOf(tokenId)).to.equal(this.owner.address);
         });
@@ -105,7 +103,6 @@ describe('wROME', function () {
             await this.nifty.approve(this.wRome.address, tokenId);
 
             await this.wRome.wrap(tokenId);
-            expect(await this.wRome.totalSupply()).to.equal(1);
             expect(await this.nifty.ownerOf(tokenId)).to.equal(this.wRome.address);
             expect(await this.wRome.ownerOf(tokenId)).to.equal(this.owner.address);
         });
@@ -115,7 +112,6 @@ describe('wROME', function () {
                 var tokenId = 100010000 + i;
                 await this.nifty.mint(this.owner.address, tokenId);
                 await this.nifty['safeTransferFrom(address,address,uint256)'](this.owner.address, this.wRome.address, tokenId);
-                expect(await this.wRome.totalSupply()).to.equal(i);
                 expect(await this.wRome.tokenURI(tokenId)).to.contain('#' + (tokenId - 100010000) + '/671');
             }
         });
@@ -125,7 +121,6 @@ describe('wROME', function () {
                 var tokenId = 100010000 + i + 651;
                 await this.nifty.mint(this.owner.address, tokenId);
                 await this.nifty['safeTransferFrom(address,address,uint256)'](this.owner.address, this.wRome.address, tokenId);
-                expect(await this.wRome.totalSupply()).to.equal(i);
                 expect(await this.wRome.tokenURI(tokenId)).to.contain('#' + (tokenId - 100010000) + '/671');
                 expect(await this.wRome.tokenURI(tokenId)).to.contain('"value": ' + (tokenId - 100010000));
             }
@@ -138,7 +133,6 @@ describe('wROME', function () {
             await this.nifty.mint(this.owner.address, tokenId);
             await this.nifty['safeTransferFrom(address,address,uint256)'](this.owner.address, this.wRome.address, tokenId);
 
-            expect(await this.wRome.totalSupply()).to.equal(1);
             await this.wRome.unwrap(tokenId);
             expect(await this.nifty.ownerOf(tokenId)).to.equal(this.owner.address);
             expect(this.wRome.ownerOf(tokenId)).to.be.reverted;
@@ -210,7 +204,6 @@ describe('wROME', function () {
             expect(await this.nifty.ownerOf(tokenId)).to.equal(this.wRome.address);
     
             // Check that no wrapped token was minted.
-            expect(await this.wRome.totalSupply()).to.equal(0);
             await expect(this.wRome.ownerOf(tokenId)).to.be.revertedWith('ERC721: owner query for nonexistent token');
     
             // Recover the token
