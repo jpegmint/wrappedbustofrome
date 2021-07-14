@@ -33,8 +33,8 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, Ownable, Reentranc
     INiftyBuilder private immutable _niftyBuilderInstance;
     mapping(string => string) private _ipfsToArweaveIndex;
 
-    event TokenWrapped(address indexed from, uint256 tokenId);
-    event TokenUnwrapped(address indexed from, uint256 tokenId);
+    event Wrapped(address indexed from, uint256 tokenId);
+    event Unwrapped(address indexed from, uint256 tokenId);
 
     constructor(address niftyBuilderAddress) ERC721("Wrapped Bust of Rome (One Year)", "wROME") {
         _niftyBuilderInstance = INiftyBuilder(niftyBuilderAddress);
@@ -75,7 +75,7 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, Ownable, Reentranc
 		require(msg.sender == ownerOf(tokenId), "wROME: Caller does not wrapped token.");
 		_burn(tokenId);
 		_niftyBuilderInstance.safeTransferFrom(address(this), msg.sender, tokenId);
-        emit TokenUnwrapped(msg.sender, tokenId);
+        emit Unwrapped(msg.sender, tokenId);
 	}
 
     /**
@@ -98,7 +98,7 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, Ownable, Reentranc
      */
     function _wrap(address to, uint256 tokenId) internal {
 		_safeMint(to, tokenId);
-        emit TokenWrapped(to, tokenId);
+        emit Wrapped(to, tokenId);
     }
 
     /**

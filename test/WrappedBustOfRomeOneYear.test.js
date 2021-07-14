@@ -64,7 +64,7 @@ describe('wROME', function () {
             await this.nifty.approve(this.contract.address, tokenId);
 
             await expect(await this.contract.wrap(tokenId))
-                .to.emit(this.contract, 'TokenWrapped')
+                .to.emit(this.contract, 'Wrapped')
                 .withArgs(this.owner.address, tokenId);
             expect(await this.nifty.ownerOf(tokenId)).to.equal(this.contract.address);
             expect(await this.contract.ownerOf(tokenId)).to.equal(this.owner.address);
