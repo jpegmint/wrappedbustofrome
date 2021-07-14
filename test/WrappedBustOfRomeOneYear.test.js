@@ -69,6 +69,23 @@ describe('wROME', function () {
             expect(await this.nifty.ownerOf(tokenId)).to.equal(this.contract.address);
             expect(await this.contract.ownerOf(tokenId)).to.equal(this.owner.address);
         });
+
+        it('reverts if wrapping a fake token', async function () {
+            var fake = await this.Nifty.deploy(this.datetime.address);
+            await fake.deployed();
+            var tokenId = 100010001;
+            await fake.mint(this.owner.address, tokenId);
+            await fake.approve(this.contract.address, tokenId);
+            await this.nifty.mint(this.addr1.address, tokenId);
+            await this.nifty.connect(this.addr1).approve(this.contract.address, tokenId);
+            
+            await expect(fake['safeTransferFrom(address,address,uint256)'](this.owner.address, this.contract.address, tokenId))
+                .to.be.revertedWith('wROME: Unrecognized contract.');
+            await expect(this.contract.wrap(tokenId))
+                .to.be.revertedWith('wROME: Caller must own NFTs');
+        });
+
+        it('reverts if tokenId not in approved range');
     });
 
     describe('tokenIds', function () {

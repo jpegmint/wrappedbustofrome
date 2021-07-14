@@ -105,6 +105,7 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, Ownable, Reentranc
      * @dev Sets the approved range of TokenIDs for simple access control.
      */
     function updateApprovedTokenRange(uint256 minTokenId, uint256 maxTokenId) public {
+        require(minTokenId <= maxTokenId, 'wROME: Min tokenId must be less than maxId.');
         _approvedTokenRange.minTokenId = minTokenId;
         _approvedTokenRange.maxTokenId = maxTokenId;
     }
