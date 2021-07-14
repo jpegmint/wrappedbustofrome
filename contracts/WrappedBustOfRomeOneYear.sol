@@ -144,7 +144,7 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, Ownable, Reentranc
      * Recovery function to extract orphaned ROME tokens. Works only if wROME contract
      * owns unwrapped ROME token.
      */
-    function recoverOrphanedToken(uint256 tokenId) public onlyOwner {
+    function recoverOrphanedToken(uint256 tokenId) external onlyOwner {
         require(!_exists(tokenId), "wROME: can't recover wrapped token");
         require(_niftyBuilderInstance.ownerOf(tokenId) == address(this), "wROME: can't recover token that is not own");
         _niftyBuilderInstance.safeTransferFrom(address(this), msg.sender, tokenId);
