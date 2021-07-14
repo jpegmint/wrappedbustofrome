@@ -28,10 +28,10 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
     constructor(address niftyBuilderAddress) ERC721("Wrapped Bust of Rome (One Year) by Daniel Arsham", "wROME") {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(MINTER_ROLE, msg.sender);
+        _niftyBuilderInstance = INiftyBuilder(niftyBuilderAddress);
 
         setIpfsGatewayUri('ipfs://');
         setArweaveGatewayUri('https://arweave.net/');
-        _niftyBuilderInstance = INiftyBuilder(niftyBuilderAddress);
 
         _ipfsToArweaveIndex["QmQdb77jfHZSwk8dGpN3mqx8q4N7EUNytiAgEkXrMPbMVw"] = "iOKh8ppTX5831s9ip169PfcqZ265rlz_kH-oyDXELtA"; //State 1
         _ipfsToArweaveIndex["QmS3kaQnxb28vcXQg35PrGarJKkSysttZdNLdZp3JquttQ"] = "4iJ3Igr90bfEkBMeQv1t2S4ctK2X-I18hnbal2YFfWI"; //State 2
@@ -106,7 +106,12 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, ERC721Enumerable, 
         byteString = abi.encodePacked(byteString, 'data:application/json;utf8,{');
         byteString = abi.encodePacked(byteString, '"name": "Eroding and Reforming Bust of Rome (One Year) #', mintNumber, '/671",');
         byteString = abi.encodePacked(byteString, '"created_by": "Daniel Arsham",');
-        byteString = abi.encodePacked(byteString, '"description": "**Daniel Arsham** (b. 1980)\\n***Eroding and Reforming Bust of Rome (One Year)***, 2021\\n\\nWith his debut NFT release, Daniel Arsham introduces a concept never before seen on Nifty Gateway. His *Eroding and Reforming Bust of Rome (One Year)* piece will erode, reform, and change based on the time of year.",');
+        byteString = abi.encodePacked(byteString
+            ,'"description": "**Daniel Arsham** (b. 1980)\\n\\n'
+            ,'***Eroding and Reforming Bust of Rome (One Year)***, 2021\\n\\n'
+            ,'With his debut NFT release, Daniel Arsham introduces a concept never before seen on Nifty Gateway. '
+            ,'His piece will erode, reform, and change based on the time of year.",'
+        );
         byteString = abi.encodePacked(byteString, '"external_url": "https://niftygateway.com/collections/danielarsham",');
         byteString = abi.encodePacked(byteString, '"image": "', imageUri, '",', '"image_url": "', imageUri, '",');
         byteString = abi.encodePacked(byteString, '"animation": "', animationUri, '",', '"animation_url": "', animationUri, '",');

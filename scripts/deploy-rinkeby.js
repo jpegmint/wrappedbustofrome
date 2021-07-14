@@ -11,6 +11,8 @@ async function main() {
     await wRome.deployed();
     console.log("wROME deployed to:", wRome.address);
 
+    var wRome = await wROME.attach('0xf132f619967b20cd97256018e4d29683d54efb34');
+
     var Nifty = await ethers.getContractFactory('MockBustOfRome');
     var nifty = await Nifty.attach('0xF5DdA67b9484b25735BBA5a90617a976c0B0e638');
 }
