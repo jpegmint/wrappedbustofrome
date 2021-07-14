@@ -10,7 +10,7 @@ async function main() {
     await datetime.deployed();
     console.log("DateTime deployed to:", datetime.address);
 
-    const Nifty = await ethers.getContractFactory('MockNiftyBuilder');
+    const Nifty = await ethers.getContractFactory('MockBustOfRome');
     console.log("Deploying Nifty...");
     const nifty = await Nifty.deploy(datetime.address)
     await nifty.deployed();
