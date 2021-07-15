@@ -58,11 +58,7 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, Ownable, Reentranc
 	function wrap(uint256 tokenId) external nonReentrant {
         require(_niftyBuilderInstance.ownerOf(tokenId) == msg.sender, 'wROME: Caller must own NFTs');
         require(_niftyBuilderInstance.getApproved(tokenId) == address(this), 'wROME: Contract must be given approval to wrap NFT.');
-        require(
-            tokenId >= _approvedTokenRange.minTokenId &&
-            tokenId <= _approvedTokenRange.maxTokenId,
-            'wROME: TokenId not approved wrap range.'
-        );
+        require(isWrappable(tokenId), 'wROME: TokenId not approved wrap range.');
 
 		_niftyBuilderInstance.transferFrom(msg.sender, address(this), tokenId);
         _wrap(msg.sender, tokenId);
@@ -72,7 +68,7 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, Ownable, Reentranc
      * @dev Burn wROME token and transfer original ROME back to sender.
      */
 	function unwrap(uint256 tokenId) external nonReentrant {
-		require(msg.sender == ownerOf(tokenId), "wROME: Caller does not wrapped token.");
+		require(msg.sender == ownerOf(tokenId), "wROME: Caller does not own wrapped token.");
 		_burn(tokenId);
 		_niftyBuilderInstance.safeTransferFrom(address(this), msg.sender, tokenId);
         emit Unwrapped(msg.sender, tokenId);
@@ -83,11 +79,7 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, Ownable, Reentranc
      */
 	function onERC721Received(address, address from, uint256 tokenId, bytes calldata) external override nonReentrant returns (bytes4) {
         require(msg.sender == address(_niftyBuilderInstance), "wROME: Unrecognized contract.");
-        require(
-            tokenId >= _approvedTokenRange.minTokenId &&
-            tokenId <= _approvedTokenRange.maxTokenId,
-            'wROME: TokenId not approved wrap range.'
-        );
+        require(isWrappable(tokenId), 'wROME: TokenId not approved wrap range.');
 
         _wrap(from, tokenId);
 		return this.onERC721Received.selector;
@@ -104,10 +96,17 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, Ownable, Reentranc
     /**
      * @dev Sets the approved range of TokenIDs for simple access control.
      */
-    function updateApprovedTokenRange(uint256 minTokenId, uint256 maxTokenId) public {
+    function updateApprovedTokenRange(uint256 minTokenId, uint256 maxTokenId) public onlyOwner {
         require(minTokenId <= maxTokenId, 'wROME: Min tokenId must be less than maxId.');
         _approvedTokenRange.minTokenId = minTokenId;
         _approvedTokenRange.maxTokenId = maxTokenId;
+    }
+    
+    /**
+     * @dev Returns whether the specified tokenId is approved to wrap.
+     */
+    function isWrappable(uint256 tokenId) public view returns (bool) {
+        return (tokenId >= _approvedTokenRange.minTokenId && tokenId <= _approvedTokenRange.maxTokenId);
     }
 
     /**

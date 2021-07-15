@@ -85,7 +85,44 @@ describe('wROME', function () {
                 .to.be.revertedWith('wROME: Caller must own NFTs');
         });
 
-        it('reverts if tokenId not in approved range');
+        it('reverts if tokenId not in approved range', async function () {
+            var tokenId = 100010001;
+            await this.nifty.mint(this.owner.address, tokenId);
+            await this.nifty.approve(this.contract.address, tokenId);
+
+            await this.contract.updateApprovedTokenRange(100010010, 100010011)
+            await expect(this.contract.wrap(tokenId))
+                .to.be.revertedWith('wROME: TokenId not approved wrap range.');
+        });
+    });
+
+    describe('token ranges', function () {
+        it('reverts if non-owner updates approved ranges', async function () {
+            await expect(this.contract.connect(this.addr1).updateApprovedTokenRange(100010010, 100010011))
+                .to.be.revertedWith('Ownable: caller is not the owner');
+        });
+
+        it('reverts if min tokenId is larger than max', async function () {
+            await expect(this.contract.updateApprovedTokenRange(100010671, 100010001))
+                .to.be.revertedWith('wROME: Min tokenId must be less than maxId.');
+        });
+
+        it('correctly updates approved token range if equal', async function () {
+            var tokenId = 100010010;
+            await this.contract.updateApprovedTokenRange(tokenId, tokenId);
+            expect(await this.contract.isWrappable(tokenId)).to.be.true;
+            expect(await this.contract.isWrappable(tokenId - 1)).to.be.false;
+            expect(await this.contract.isWrappable(tokenId + 1)).to.be.false;
+        });
+
+        it('correctly updates the approved token ranges', async function () {
+            var tokenId = 100010020;
+            await this.contract.updateApprovedTokenRange(tokenId, tokenId + 1);
+            expect(await this.contract.isWrappable(tokenId)).to.be.true;
+            expect(await this.contract.isWrappable(tokenId + 1)).to.be.true;
+            expect(await this.contract.isWrappable(tokenId - 1)).to.be.false;
+            expect(await this.contract.isWrappable(tokenId - 2)).to.be.false;
+        })
     });
 
     describe('tokenIds', function () {
@@ -155,12 +192,14 @@ describe('wROME', function () {
 
             await this.contract.unwrap(tokenId);
             expect(await this.nifty.ownerOf(tokenId)).to.equal(this.owner.address);
-            expect(this.contract.ownerOf(tokenId)).to.be.reverted;
+            expect(this.contract.ownerOf(tokenId))
+                .to.be.revertedWith('ERC721: owner query for nonexistent token');
         });
 
         it('reverts if non-existent token', async function () {
             var tokenId = 100010001;
-            await expect(this.contract.unwrap(tokenId)).to.be.reverted;
+            await expect(this.contract.unwrap(tokenId))
+                .to.be.revertedWith('ERC721: owner query for nonexistent token');
         });
 
         it('reverts if not owner', async function () {
@@ -168,7 +207,8 @@ describe('wROME', function () {
             await this.nifty.mint(this.owner.address, tokenId);
             await this.nifty['safeTransferFrom(address,address,uint256)'](this.owner.address, this.contract.address, tokenId);
 
-            await expect(this.contract.connect(this.addr1).unwrap(tokenId)).to.be.reverted;
+            await expect(this.contract.connect(this.addr1).unwrap(tokenId))
+                .to.be.revertedWith('wROME: Caller does not own wrapped token.');
         });
     });
 
