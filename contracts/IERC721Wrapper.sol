@@ -2,14 +2,15 @@
 
 pragma solidity ^0.8.0;
 
+/// @author jpegminting.xyz
+
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
-import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 /**
  * @title ERC721 token wrapping interface.
- * @author jpegminting.xyz
  */
- interface IERC721Wrapper is IERC721Receiver, IERC165 {
+ interface IERC721Wrapper is IERC721, IERC721Receiver {
     /**
      * @dev Emitted when `tokenId` token wrapped by `from`.
      */
@@ -24,22 +25,21 @@ import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
      * @dev Wraps `tokenId` by receiving token and minting matching token.
      * Emits a {Wrapped} event.
      */
-    function wrap(uint256 tokenId) external;
+    function wrap(address contract_, uint256 tokenId) external;
 
     /**
      * @dev Unwraps `tokenId` by burning wrapped and returning original token.
      * Emits a {Unwrapped} event.
      */
-    function unwrap(uint256 tokenId) external;
+    function unwrap(address contract_, uint256 tokenId) external;
 
     /**
      * @dev Checks and returns whether the tokenId is wrappable.
      */
-    function isWrappable(uint256 tokenId) external view returns (bool);
+    function isWrappable(address contract_, uint256 tokenId) external view returns (bool);
 
     /**
-     * @dev Receives `tokenId` and mints matching token if valid request.
-     * Emits a {Wrapped} event.
+     * @dev Updates and maintains approved contract/tokenIds that contract can wrap.
      */
-    function onERC721Received(address, address from, uint256 tokenId, bytes calldata) external override returns (bytes4);
+    function updateApprovedTokenRanges(address contract_, uint256 minTokenId, uint256 maxTokenId) external;
 }
