@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 /// @title WrappedBustOfRomeOneYear
 /// @author: jpegminting.xyz
 
+import "./IERC721Wrapper.sol";
 import "./api/INiftyBuilder.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -21,7 +22,7 @@ import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
  *
  * @dev Wrapping contract for ROME token to improve the TokenURI metadata.
  */
-contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, Ownable, ReentrancyGuard {
+contract WrappedBustOfRomeOneYear is ERC721, IERC721Wrapper, Ownable, ReentrancyGuard {
     using Strings for uint256;
 
     struct TokenIdRange {
@@ -32,9 +33,6 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, Ownable, Reentranc
     TokenIdRange private _approvedTokenRange;
     INiftyBuilder private immutable _niftyBuilderInstance;
     mapping(string => string) private _ipfsToArweaveIndex;
-
-    event Wrapped(address indexed from, uint256 tokenId);
-    event Unwrapped(address indexed from, uint256 tokenId);
 
     constructor(address niftyBuilderAddress) ERC721("Wrapped Bust of Rome (One Year)", "wROME") {
         _niftyBuilderInstance = INiftyBuilder(niftyBuilderAddress);
@@ -53,9 +51,17 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, Ownable, Reentranc
     }
 
     /**
+     * @dev See {IERC165-supportsInterface}.
+     */
+    function supportsInterface(bytes4 interfaceId) public view virtual override(IERC165, ERC721) returns (bool) {
+        return interfaceId == type(IERC721Wrapper).interfaceId
+            || super.supportsInterface(interfaceId);
+    }
+
+    /**
      * @dev Transfers ROME token into wrap contract and issues wROME token.
      */
-	function wrap(uint256 tokenId) external nonReentrant {
+	function wrap(uint256 tokenId) external override nonReentrant {
         require(_niftyBuilderInstance.ownerOf(tokenId) == msg.sender, 'wROME: Caller must own NFTs');
         require(_niftyBuilderInstance.getApproved(tokenId) == address(this), 'wROME: Contract must be given approval to wrap NFT.');
         require(isWrappable(tokenId), 'wROME: TokenId not approved wrap range.');
@@ -67,7 +73,7 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, Ownable, Reentranc
     /**
      * @dev Burn wROME token and transfer original ROME back to sender.
      */
-	function unwrap(uint256 tokenId) external nonReentrant {
+	function unwrap(uint256 tokenId) external override nonReentrant {
 		require(msg.sender == ownerOf(tokenId), "wROME: Caller does not own wrapped token.");
 		_burn(tokenId);
 		_niftyBuilderInstance.safeTransferFrom(address(this), msg.sender, tokenId);
@@ -77,7 +83,12 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, Ownable, Reentranc
     /**
      * @dev Receives ROME token and mints wROME token back to sender.
      */
-	function onERC721Received(address, address from, uint256 tokenId, bytes calldata) external override nonReentrant returns (bytes4) {
+	function onERC721Received(address, address from, uint256 tokenId, bytes calldata) 
+        external
+        override
+        nonReentrant
+        returns (bytes4)
+    {
         require(msg.sender == address(_niftyBuilderInstance), "wROME: Unrecognized contract.");
         require(isWrappable(tokenId), 'wROME: TokenId not approved wrap range.');
 
@@ -105,7 +116,7 @@ contract WrappedBustOfRomeOneYear is ERC721, IERC721Receiver, Ownable, Reentranc
     /**
      * @dev Returns whether the specified tokenId is approved to wrap.
      */
-    function isWrappable(uint256 tokenId) public view returns (bool) {
+    function isWrappable(uint256 tokenId) public view override returns (bool) {
         return (tokenId >= _approvedTokenRange.minTokenId && tokenId <= _approvedTokenRange.maxTokenId);
     }
 
