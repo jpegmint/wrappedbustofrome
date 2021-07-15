@@ -2,6 +2,7 @@
 artifacts/
 cache/
 secrets.json
+coverage.json
 
 # Logs
 logs
