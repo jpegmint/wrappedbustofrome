@@ -5,8 +5,8 @@ pragma solidity ^0.8.0;
 /// @title WrappedBustOfRomeOneYear
 /// @author: jpegminting.xyz
 
-import "./ERC721Wrapper.sol";
 import "./api/INiftyBuilder.sol";
+import "./@jpegminting/contracts/ERC721Wrapper.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
