@@ -85,6 +85,9 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
         );
     }
 
+    /**
+     * @dev See {IERC721Wrapper-updateApprovedTokenRanges}.
+     */
     function updateApprovedTokenRanges(address contract_, uint256 minTokenId, uint256 maxTokenId) public virtual override;
 
     /**
