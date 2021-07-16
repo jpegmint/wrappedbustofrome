@@ -2,11 +2,11 @@
 
 pragma solidity ^0.8.0;
 
-/// @title: WrappedBustOfRomeOneYear
-/// @author: jpegminting.xyz
+/// @title WrappedBustOfRomeOneYear
+/// @author jpegmint.xyz
 
 import "./INiftyBuilder.sol";
-import "./@jpegminting/contracts/ERC721Wrapper.sol";
+import "./@jpegmint/contracts/ERC721Wrapper.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";

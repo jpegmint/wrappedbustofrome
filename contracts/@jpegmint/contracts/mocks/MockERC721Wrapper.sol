@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-/// @author jpegminting.xyz
+/// @author jpegmint.xyz
 
 import "../ERC721Wrapper.sol";
 

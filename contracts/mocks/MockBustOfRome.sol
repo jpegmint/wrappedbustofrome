@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.0;
 
+/// @author jpegmint.xyz
+
 import "../INiftyBuilder.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 

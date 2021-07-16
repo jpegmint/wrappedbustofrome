@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-/// @author jpegminting.xyz
+/// @author jpegmint.xyz
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
