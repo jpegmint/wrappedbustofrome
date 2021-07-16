@@ -2,10 +2,10 @@
 
 pragma solidity ^0.8.0;
 
-/// @title WrappedBustOfRomeOneYear
+/// @title: WrappedBustOfRomeOneYear
 /// @author: jpegminting.xyz
 
-import "./api/INiftyBuilder.sol";
+import "./INiftyBuilder.sol";
 import "./@jpegminting/contracts/ERC721Wrapper.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -57,12 +57,12 @@ contract WrappedBustOfRomeOneYear is ERC721Wrapper, Ownable {
 
         require(_exists(tokenId), "wROME: URI query for nonexistent token");
 
-        bytes memory byteString;
         string memory mintNumber = (tokenId - 100010000).toString();
         string memory tokenHash = _niftyBuilderInstance.tokenIPFSHash(tokenId);
         string memory imageUri = string(abi.encodePacked('https://arweave.net/', _ipfsToArweaveIndex[tokenHash]));
         string memory animationUri = string(abi.encodePacked('ipfs://', tokenHash));
 
+        bytes memory byteString;
         byteString = abi.encodePacked(byteString, 'data:application/json;utf8,{');
         byteString = abi.encodePacked(byteString, '"name": "Eroding and Reforming Bust of Rome (One Year) #', mintNumber, '/671",');
         byteString = abi.encodePacked(byteString, '"created_by": "Daniel Arsham",');
@@ -77,7 +77,6 @@ contract WrappedBustOfRomeOneYear is ERC721Wrapper, Ownable {
         byteString = abi.encodePacked(byteString, '"animation": "', animationUri, '",', '"animation_url": "', animationUri, '",');
         byteString = abi.encodePacked(byteString, '"attributes":[{"trait_type": "Edition", "display_type": "number", "value": ', mintNumber, ', "max_value": 671}]');
         byteString = abi.encodePacked(byteString, '}');
-        
         return string(byteString);
     }
 

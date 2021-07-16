@@ -8,15 +8,12 @@ describe('WrappedBustOfRomeOneYear', function () {
 
     before(async function () {
         [this.owner, this.addr1] = await ethers.getSigners();
-        this.DateTime = await ethers.getContractFactory("MockDateTime");
         this.Nifty = await ethers.getContractFactory('MockBustOfRome');
         this.wROME = await ethers.getContractFactory('WrappedBustOfRomeOneYear');
     });
 
     beforeEach(async function () {
-        this.datetime = await this.DateTime.deploy();
-        await this.datetime.deployed();
-        this.nifty = await this.Nifty.deploy(this.datetime.address);
+        this.nifty = await this.Nifty.deploy();
         await this.nifty.deployed();
         this.contract = await this.wROME.deploy(this.nifty.address);
         await this.contract.deployed();
@@ -62,7 +59,7 @@ describe('WrappedBustOfRomeOneYear', function () {
             await this.nifty.mint(this.owner.address, tokenId);
             await this.nifty['safeTransferFrom(address,address,uint256)'](this.owner.address, this.contract.address, tokenId);
 
-            this.datetime.mockSetMonth(5);
+            this.nifty.mockSetMonth(4);
             expect(await this.contract.tokenURI(tokenId))
                 .to.equal('data:application/json;utf8,{"name": "Eroding and Reforming Bust of Rome (One Year) #1/671","created_by": "Daniel Arsham","description": "**Daniel Arsham** (b. 1980)\\n\\n***Eroding and Reforming Bust of Rome (One Year)***, 2021\\n\\nWith his debut NFT release, Daniel Arsham introduces a concept never before seen on Nifty Gateway. His piece will erode, reform, and change based on the time of year.","external_url": "https://niftygateway.com/collections/danielarsham","image": "https://arweave.net/d8mJGLKJhg1Gl2OW1qQjcH8Y8tYBCvNWUuGH6iXd18U","image_url": "https://arweave.net/d8mJGLKJhg1Gl2OW1qQjcH8Y8tYBCvNWUuGH6iXd18U","animation": "ipfs://QmZwHt9ZhCgVMqpcFDhwKSA3higVYQXzyaPqh2BPjjXJXU","animation_url": "ipfs://QmZwHt9ZhCgVMqpcFDhwKSA3higVYQXzyaPqh2BPjjXJXU","attributes":[{"trait_type": "Edition", "display_type": "number", "value": 1, "max_value": 671}]}');
         });
@@ -87,9 +84,9 @@ describe('WrappedBustOfRomeOneYear', function () {
                 "QmesagGNeyjDvJ2N5oc8ykBiwsiE7gdk9vnfjjAe3ipjx4": "b132CTM45LOEMwzOqxnPqtDqlPPwcaQ0ztQ5OWhBnvQ", //State 12
             }
 
-            var month = 1;
+            var month = 0;
             for (let [ipfsHash, arweaveHash] of Object.entries(ipfsToArweaveMap)) {
-                this.datetime.mockSetMonth(month++);
+                await this.nifty.mockSetMonth(month++);
                 expect(await this.contract.tokenURI(tokenId)).to.contain(ipfsHash).and.contain(arweaveHash);
             }
         });
