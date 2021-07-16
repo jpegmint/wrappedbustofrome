@@ -79,7 +79,7 @@ describe('WrappedBustOfRomeOneYear', function () {
                 .to.equal('data:application/json;utf8,{"name": "Eroding and Reforming Bust of Rome (One Year) #1/671","created_by": "Daniel Arsham","description": "**Daniel Arsham** (b. 1980)\\n\\n***Eroding and Reforming Bust of Rome (One Year)***, 2021\\n\\nWith his debut NFT release, Daniel Arsham introduces a concept never before seen on Nifty Gateway. His piece will erode, reform, and change based on the time of year.","external_url": "https://niftygateway.com/collections/danielarsham","image": "https://arweave.net/d8mJGLKJhg1Gl2OW1qQjcH8Y8tYBCvNWUuGH6iXd18U","image_url": "https://arweave.net/d8mJGLKJhg1Gl2OW1qQjcH8Y8tYBCvNWUuGH6iXd18U","animation": "ipfs://QmZwHt9ZhCgVMqpcFDhwKSA3higVYQXzyaPqh2BPjjXJXU","animation_url": "ipfs://QmZwHt9ZhCgVMqpcFDhwKSA3higVYQXzyaPqh2BPjjXJXU","attributes":[{"trait_type": "Edition", "display_type": "number", "value": 1, "max_value": 671}]}');
         });
 
-        it.only('correctly generates metadata for every month', async function() {
+        it('correctly generates metadata for every month', async function() {
             var tokenId = 100010001;
             await this.nifty.mint(this.owner.address, tokenId);
             await this.nifty['safeTransferFrom(address,address,uint256)'](this.owner.address, this.contract.address, tokenId);
@@ -92,11 +92,11 @@ describe('WrappedBustOfRomeOneYear', function () {
                 1621098000000, // May -> 3
                 1623776400000, // Jun -> 4
                 1626368400000, // Jul -> 5
-                1629046800000,
-                1631725200000,
-                1634317200000,
-                1636999200000,
-                1639591200000
+                1629046800000, // Aug -> 6
+                1631725200000, // Sep -> 7
+                1634317200000, // Oct -> 8
+                1636999200000, // Nov -> 9
+                1639591200000  // Dec -> 10
             ];
 
             for (let i = 0; i < 12; i++) {
