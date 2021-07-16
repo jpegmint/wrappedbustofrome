@@ -25,6 +25,7 @@ contract MockBustOfRome is ERC721, INiftyBuilder {
     constructor() ERC721('MockBustOfRome', 'mROME') {}
 
     function mockSetMonth(uint256 month) public {
+        require(month >= 1 && month <= 12, 'mROME: Invalid month');
         _mockMonth = month;
     }
     
@@ -34,6 +35,7 @@ contract MockBustOfRome is ERC721, INiftyBuilder {
 
     function tokenIPFSHash(uint256 tokenId) external view override returns (string memory) {
         require(_exists(tokenId), "ERC721Metadata: IPFS hash query for nonexistent token");
-        return artifact[_mockMonth];
+        uint256 month = (_mockMonth + 9) % 12 + 1;
+        return artifact[month - 1];
     }
 }
