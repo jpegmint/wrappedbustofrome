@@ -23,12 +23,8 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 contract WrappedBustOfRomeOneYear is ERC721Wrapper, Ownable {
     using Strings for uint256;
 
-    /// The Nifty Gateway ROME contract
     INiftyBuilder private immutable _niftyBuilderInstance;
 
-    /**
-     * @dev Initialize and store Nifty Builder instance.
-     */
     constructor(address niftyBuilderAddress) ERC721("Wrapped Bust of Rome (One Year)", "wROME") {
         _niftyBuilderInstance = INiftyBuilder(niftyBuilderAddress);
     }
