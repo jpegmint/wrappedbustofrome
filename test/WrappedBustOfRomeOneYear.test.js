@@ -69,47 +69,122 @@ describe('WrappedBustOfRomeOneYear', function () {
     });
 
     describe('tokenURI', function () {
-        it('correctly generates tokenURI', async function () {
-            var tokenId = 100010001;
-            await this.nifty.mint(this.owner.address, tokenId);
-            await this.nifty['safeTransferFrom(address,address,uint256)'](this.owner.address, this.contract.address, tokenId);
 
-            this.nifty.mockSetMonth(7);
-            expect(await this.contract.tokenURI(tokenId))
+        beforeEach(async function () {
+            this.tokenId = 100010001;
+            await this.nifty.mint(this.owner.address, this.tokenId);
+            await this.nifty['safeTransferFrom(address,address,uint256)'](this.owner.address, this.contract.address, this.tokenId);
+            await this.nifty.mockSetMonth(7);
+
+            this.metadata = new String('data:application/json;utf8,{'
+            + '"name": "Eroding and Reforming Bust of Rome (One Year) #1/671",'
+            + '"created_by": "Daniel Arsham",'
+            + '"description": "**Daniel Arsham** (b. 1980)\\n\\n***Eroding and Reforming Bust of Rome (One Year)***, 2021\\n\\nWith his debut NFT release, Daniel Arsham introduces a concept never before seen on Nifty Gateway. His piece will erode, reform, and change based on the time of year.",'
+            + '"external_url": "https://niftygateway.com/collections/danielarsham",'
+            + '"image": "https://arweave.net/{ARWEAVE_HASH}",'
+            + '"image_url": "https://arweave.net/{ARWEAVE_HASH}",'
+            + '"animation": "ipfs://{IPFS_HASH}",'
+            + '"animation_url": "ipfs://{IPFS_HASH}",'
+            + '"attributes":[{"trait_type": "Edition", "display_type": "number", "value": 1, "max_value": 671}]'
+            + '}');
+        });
+
+        it('correctly generates tokenURI', async function () {
+            expect(await this.contract.tokenURI(this.tokenId))
                 .to.equal('data:application/json;utf8,{"name": "Eroding and Reforming Bust of Rome (One Year) #1/671","created_by": "Daniel Arsham","description": "**Daniel Arsham** (b. 1980)\\n\\n***Eroding and Reforming Bust of Rome (One Year)***, 2021\\n\\nWith his debut NFT release, Daniel Arsham introduces a concept never before seen on Nifty Gateway. His piece will erode, reform, and change based on the time of year.","external_url": "https://niftygateway.com/collections/danielarsham","image": "https://arweave.net/d8mJGLKJhg1Gl2OW1qQjcH8Y8tYBCvNWUuGH6iXd18U","image_url": "https://arweave.net/d8mJGLKJhg1Gl2OW1qQjcH8Y8tYBCvNWUuGH6iXd18U","animation": "ipfs://QmZwHt9ZhCgVMqpcFDhwKSA3higVYQXzyaPqh2BPjjXJXU","animation_url": "ipfs://QmZwHt9ZhCgVMqpcFDhwKSA3higVYQXzyaPqh2BPjjXJXU","attributes":[{"trait_type": "Edition", "display_type": "number", "value": 1, "max_value": 671}]}');
         });
 
-        it('correctly generates metadata for every month', async function() {
-            var tokenId = 100010001;
-            await this.nifty.mint(this.owner.address, tokenId);
-            await this.nifty['safeTransferFrom(address,address,uint256)'](this.owner.address, this.contract.address, tokenId);
+        it('correctly generates valid JSON', async function () {
+            let metadata = JSON.parse((await this.contract.tokenURI(this.tokenId)).replace(/data\:application\/json\;utf8\,/g, ''));
+            expect(metadata).to.have.all.keys('name', 'created_by', 'description', 'external_url', 'image', 'image_url', 'animation', 'animation_url', 'attributes');
+            expect(metadata).to.have.property('name', 'Eroding and Reforming Bust of Rome (One Year) #1/671');
+            expect(metadata).to.have.property('created_by', 'Daniel Arsham');
+            expect(metadata).to.have.property('external_url', 'https://niftygateway.com/collections/danielarsham');
+            expect(metadata).to.have.property('image', 'https://arweave.net/d8mJGLKJhg1Gl2OW1qQjcH8Y8tYBCvNWUuGH6iXd18U');
+            expect(metadata).to.have.property('image_url', 'https://arweave.net/d8mJGLKJhg1Gl2OW1qQjcH8Y8tYBCvNWUuGH6iXd18U');
+            expect(metadata).to.have.property('animation', 'ipfs://QmZwHt9ZhCgVMqpcFDhwKSA3higVYQXzyaPqh2BPjjXJXU');
+            expect(metadata).to.have.property('animation_url', 'ipfs://QmZwHt9ZhCgVMqpcFDhwKSA3higVYQXzyaPqh2BPjjXJXU');
+            expect(metadata).to.have.property('description', `**Daniel Arsham** (b. 1980)
 
-            var timestamps = [
-                1610733600000, // Jan -> 11
-                1613412000000, // Feb -> 12
-                1615827600000, // Mar -> 1
-                1618506000000, // Apr -> 2
-                1621098000000, // May -> 3
-                1623776400000, // Jun -> 4
-                1626368400000, // Jul -> 5
-                1629046800000, // Aug -> 6
-                1631725200000, // Sep -> 7
-                1634317200000, // Oct -> 8
-                1636999200000, // Nov -> 9
-                1639591200000  // Dec -> 10
-            ];
+***Eroding and Reforming Bust of Rome (One Year)***, 2021
 
-            for (let i = 0; i < 12; i++) {
-                let date = new Date(timestamps[i]),
-                    month = date.getMonth() + 1,
-                    hashes = ipfsToArweaveMap[month];
+With his debut NFT release, Daniel Arsham introduces a concept never before seen on Nifty Gateway. His piece will erode, reform, and change based on the time of year.`);
+            expect(metadata['attributes'][0]).to.have.property('trait_type', 'Edition');
+            expect(metadata['attributes'][0]).to.have.property('display_type', 'number');
+            expect(metadata['attributes'][0]).to.have.property('value', 1);
+            expect(metadata['attributes'][0]).to.have.property('max_value', 671);
+        });
 
-                await this.nifty.mockSetMonth(month);
-                let ipfsHash = await this.nifty.tokenIPFSHash(tokenId),
-                    arweaveHash = ipfsToArweaveMap[ipfsHash];
-                
-                expect(await this.contract.tokenURI(tokenId)).to.contain(hashes["ipfs"]).and.contain(hashes["ar"]);
-            }
+        it('correctly generates hashes for Jan', async function() {
+            await this.nifty.mockSetMonth(new Date(1610733600000).getMonth() + 1);
+            expect(await this.contract.tokenURI(this.tokenId))
+                .to.equal(this.metadata.replace(/{ARWEAVE_HASH}/g, ipfsToArweaveMap[1]["ar"]).replace(/{IPFS_HASH}/g, ipfsToArweaveMap[1]["ipfs"]));
+        });
+
+        it('correctly generates hashes for Feb', async function() {
+            await this.nifty.mockSetMonth(new Date(1613412000000).getMonth() + 1);
+            expect(await this.contract.tokenURI(this.tokenId))
+                .to.equal(this.metadata.replace(/{ARWEAVE_HASH}/g, ipfsToArweaveMap[2]["ar"]).replace(/{IPFS_HASH}/g, ipfsToArweaveMap[2]["ipfs"]));
+        });
+
+        it('correctly generates hashes for Mar', async function() {
+            await this.nifty.mockSetMonth(new Date(1615827600000).getMonth() + 1);
+            expect(await this.contract.tokenURI(this.tokenId))
+                .to.equal(this.metadata.replace(/{ARWEAVE_HASH}/g, ipfsToArweaveMap[3]["ar"]).replace(/{IPFS_HASH}/g, ipfsToArweaveMap[3]["ipfs"]));
+        });
+
+        it('correctly generates hashes for Apr', async function() {
+            await this.nifty.mockSetMonth(new Date(1618506000000).getMonth() + 1);
+            expect(await this.contract.tokenURI(this.tokenId))
+                .to.equal(this.metadata.replace(/{ARWEAVE_HASH}/g, ipfsToArweaveMap[4]["ar"]).replace(/{IPFS_HASH}/g, ipfsToArweaveMap[4]["ipfs"]));
+        });
+
+        it('correctly generates hashes for May', async function() {
+            await this.nifty.mockSetMonth(new Date(1621098000000).getMonth() + 1);
+            expect(await this.contract.tokenURI(this.tokenId))
+                .to.equal(this.metadata.replace(/{ARWEAVE_HASH}/g, ipfsToArweaveMap[5]["ar"]).replace(/{IPFS_HASH}/g, ipfsToArweaveMap[5]["ipfs"]));
+        });
+
+        it('correctly generates hashes for Jun', async function() {
+            await this.nifty.mockSetMonth(new Date(1623758400000).getMonth() + 1);
+            expect(await this.contract.tokenURI(this.tokenId))
+                .to.equal(this.metadata.replace(/{ARWEAVE_HASH}/g, ipfsToArweaveMap[6]["ar"]).replace(/{IPFS_HASH}/g, ipfsToArweaveMap[6]["ipfs"]));
+        });
+
+        it('correctly generates hashes for Jul', async function() {
+            await this.nifty.mockSetMonth(new Date(1626368400000).getMonth() + 1);
+            expect(await this.contract.tokenURI(this.tokenId))
+                .to.equal(this.metadata.replace(/{ARWEAVE_HASH}/g, ipfsToArweaveMap[7]["ar"]).replace(/{IPFS_HASH}/g, ipfsToArweaveMap[7]["ipfs"]));
+        });
+
+        it('correctly generates hashes for Aug', async function() {
+            await this.nifty.mockSetMonth(new Date(1629046800000).getMonth() + 1);
+            expect(await this.contract.tokenURI(this.tokenId))
+                .to.equal(this.metadata.replace(/{ARWEAVE_HASH}/g, ipfsToArweaveMap[8]["ar"]).replace(/{IPFS_HASH}/g, ipfsToArweaveMap[8]["ipfs"]));
+        });
+
+        it('correctly generates hashes for Sep', async function() {
+            await this.nifty.mockSetMonth(new Date(1631725200000).getMonth() + 1);
+            expect(await this.contract.tokenURI(this.tokenId))
+                .to.equal(this.metadata.replace(/{ARWEAVE_HASH}/g, ipfsToArweaveMap[9]["ar"]).replace(/{IPFS_HASH}/g, ipfsToArweaveMap[9]["ipfs"]));
+        });
+
+        it('correctly generates hashes for Oct', async function() {
+            await this.nifty.mockSetMonth(new Date(1634317200000).getMonth() + 1);
+            expect(await this.contract.tokenURI(this.tokenId))
+                .to.equal(this.metadata.replace(/{ARWEAVE_HASH}/g, ipfsToArweaveMap[10]["ar"]).replace(/{IPFS_HASH}/g, ipfsToArweaveMap[10]["ipfs"]));
+        });
+
+        it('correctly generates hashes for Nov', async function() {
+            await this.nifty.mockSetMonth(new Date(1636999200000).getMonth() + 1);
+            expect(await this.contract.tokenURI(this.tokenId))
+                .to.equal(this.metadata.replace(/{ARWEAVE_HASH}/g, ipfsToArweaveMap[11]["ar"]).replace(/{IPFS_HASH}/g, ipfsToArweaveMap[11]["ipfs"]));
+        });
+
+        it('correctly generates hashes for Dec', async function() {
+            await this.nifty.mockSetMonth(new Date(1639591200000).getMonth() + 1);
+            expect(await this.contract.tokenURI(this.tokenId))
+                .to.equal(this.metadata.replace(/{ARWEAVE_HASH}/g, ipfsToArweaveMap[12]["ar"]).replace(/{IPFS_HASH}/g, ipfsToArweaveMap[12]["ipfs"]));
         });
     });
 
